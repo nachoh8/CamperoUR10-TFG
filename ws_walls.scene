@@ -1,0 +1,100 @@
+scene
+* p_right
+1
+plane
+1 0 0 0
+0.67 0 0
+0 0 0 1
+0.1 0.1 1 1
+* p_left
+1
+plane
+1 0 0 0
+-0.67 0 0
+0 0 0 1
+0.1 0.1 1 1
+* p_up
+1
+plane
+0 0 1 0
+0 0 2
+0 0 0 1
+0.1 0.1 1 1
+* p_front
+1
+plane
+0 1 0 0
+0 0.5 0
+0 0 0 1
+0.1 0.1 1 1
+* p_back
+1
+plane
+0 1 0 0
+0 -0.5 0
+0 0 0 1
+0.1 0.1 1 1
+* o_box
+1
+box
+0.5 0.5 0.02
+-0.2 0 0.73
+0 0 0 1
+1 0 0 1
+.
+
+#* w_right
+#1
+#box
+#0.1 1 2
+#0.67 0 1
+#0 0 0 1
+#0.1 0.1 1 0.1
+#* w_left
+#1
+#box
+#0.1 1 2
+#-0.67 0 1
+#0 0 0 1
+#0.1 0.1 1 0.1
+#* w_up
+#1
+#box
+#2 1 0.1
+#0 0 2
+#0 0 0 1
+#0.1 0.1 1 0.1
+#* w_front
+#1
+#box
+#2 0.1 2
+#0 0.5 1
+#0 0 0 1
+#0.1 0.1 1 0.1
+#* w_back
+#1
+#box
+#2 0.1 2
+#0 -0.5 1
+#0 0 0 1
+#0.1 0.1 1 0.1
+
+
+#description, example:
+#scene1 # scene name
+#* w_front # object_name
+#1 # number of shapes
+#type = (box, cylinder, sphere, cone, mesh, plane)
+#other param:
+#   if box->x y z # size
+#   if cylinder or cone->r l # radio longitud
+#   if sphere->r # radio
+#   if mesh->v t # v,t are int
+#   if plane->a b c d # equation ax + by + cz + d = 0
+#0.75 0 0.5 # position of shape
+#0 0 0 1 # orientation of shape
+#1 0 0 0 # RGBA color of shape, el color en plane no funciona sale siempre transparente
+#. # final doc
+
+#con este nodo moveit_publish_scene_from_text se puede cargar automaticamente el archivo
+#el problema... que los colores de las figuras no los tiene en cuenta xd
