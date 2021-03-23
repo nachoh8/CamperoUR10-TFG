@@ -25,6 +25,15 @@ extern const std::string C_UR10_W1_JOINT; // = "campero_ur10_wrist_1_joint";
 extern const std::string C_UR10_W2_JOINT; // = "campero_ur10_wrist_2_joint";
 extern const std::string C_UR10_W3_JOINT; // = "campero_ur10_wrist_3_joint";
 
+extern const int C_UR10_SHOULDER_PAN_JOINT_IDX;
+extern const int C_UR10_SHOULDER_LIFT_JOINT_IDX;
+extern const int C_UR10_ELBOW_JOINT_IDX;
+extern const int C_UR10_W1_JOINT_IDX;
+extern const int C_UR10_W2_JOINT_IDX;
+extern const int C_UR10_W3_JOINT_IDX;
+
+int jointName2Idx(const std::string& name);
+
 extern const std::string C_UR10_EE_JOINT; // = "campero_ur10_ee_fixed_joint";
 
 // Poses

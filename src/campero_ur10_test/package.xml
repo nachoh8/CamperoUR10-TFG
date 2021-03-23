@@ -19,6 +19,8 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <build_depend>campero_ur10_msgs</build_depend>
+
 
   <buildtool_depend>catkin</buildtool_depend>
 

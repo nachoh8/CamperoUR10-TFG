@@ -8,6 +8,8 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
+#include <campero_ur10_msgs/MoveOp.h>
+
 #include "c_ur10_utils.h"
 
 
@@ -31,11 +33,9 @@ private:
     geometry_msgs::Quaternion ori_constraint;
 
     ros::NodeHandle nh;
-    ros::Subscriber sub_image;
+    ros::Subscriber sub_image, sub_move;
 
     void prompt(std::string msg);
-
-    void print(std::string msg);
 
     void showPlan();
 
@@ -52,21 +52,25 @@ public:
 
     bool plan_exec_Carthesian(std::vector<geometry_msgs::Pose>& waypoints);
 
+    bool moveJoint(const int joint, const double value);
+
+    bool moveJoint(const std::string& joint, const double value);
+
     bool goReadyDraw();
 
     void addOriConstraint();
 
     void main();
 
-    void drawCircle(const double x, const double y, const double r);
+    //void drawCircle(const double x, const double y, const double r);
 
-    void drawSin(const double x, const double y, const double maxX, const double maxY);
-
-    void points2Pose(geometry_msgs::PoseArray points);
+    //void drawSin(const double x, const double y, const double maxX, const double maxY);
 
     void goHome();
 
     void callbackDraw(geometry_msgs::PoseArray points);
+
+    void callbackMoveOp(const campero_ur10_msgs::MoveOp operation);
 
     moveit::planning_interface::MoveGroupInterface& getMoveGroup();
 };

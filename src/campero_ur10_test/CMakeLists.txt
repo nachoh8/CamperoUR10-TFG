@@ -27,6 +27,7 @@ find_package(catkin REQUIRED
     tf2_ros
     tf2_eigen
     tf2_geometry_msgs
+    campero_ur10_msgs
 )
 
 find_package(Boost REQUIRED system filesystem date_time thread)

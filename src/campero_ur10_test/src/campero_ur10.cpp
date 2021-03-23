@@ -13,7 +13,8 @@
 
 #define C_UR10_INFO_NAMED "CamperoUR10"
 #define NODE_NAME "campero_ur10"
-#define TOPIC_NAME "image_points"
+#define TOPIC_NAME_MOVE "campero_ur10_move"
+#define TOPIC_NAME_BOARD "image_points"
 #define QUEUE_SIZE 1000
 
 CamperoUR10::CamperoUR10() {
@@ -27,6 +28,9 @@ CamperoUR10::CamperoUR10() {
 
     move_group.setMaxVelocityScalingFactor(0.1);
 
+    move_group.setStartStateToCurrentState();
+
+
     //sub_image = nh.subscribe(TOPIC_NAME, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
 
     //kinematic_state = move_group.getCurrentState();
@@ -39,16 +43,12 @@ CamperoUR10::CamperoUR10() {
     visual_tools.trigger();
 
     // Show Info
-    print("Reference frame: " + move_group.getPlanningFrame()
-        + "\nEnd effector link: " + move_group.getEndEffectorLink());
+    ROS_INFO("tutorial", "Reference frame: %s", move_group.getPlanningFrame().c_str());
+    ROS_INFO("tutorial", "End effector link: %s", move_group.getEndEffectorLink().c_str());
 }
 
 void CamperoUR10::prompt(std::string msg) {
     visual_tools.prompt(msg);
-}
-
-void CamperoUR10::print(std::string msg) {
-    ROS_INFO_NAMED(C_UR10_INFO_NAMED, msg.c_str());
 }
 
 void CamperoUR10::showPlan() {
@@ -64,27 +64,27 @@ void CamperoUR10::showPlan() {
 }
 
 bool CamperoUR10::plan() {
-    print("Planning...");
+    ROS_INFO("Planning...");
     bool success = (move_group.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
     if (success) {
-        print("Plan Ok");
+        ROS_INFO("Plan Ok");
         showPlan();
         return true;
     }
 
-    print("Plan FAILED");
+    ROS_INFO("Plan FAILED");
 
     return false;
 }
 
 double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) {
-    print("Planning...");
+    ROS_INFO("Planning...");
 
     moveit_msgs::RobotTrajectory trajectory;
     double fraction = move_group.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
     
-    ROS_INFO_NAMED(C_UR10_INFO_NAMED, "Cartesian plan path (%.2f%% acheived)", fraction * 100.0);
+    ROS_INFO("Cartesian plan path (%.2f%% acheived)", fraction * 100.0);
 
     // Show plan
     visual_tools.deleteAllMarkers();
@@ -110,7 +110,7 @@ double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) 
 }
 
 bool CamperoUR10::execute() {
-    print("Moving...");
+    ROS_INFO("Moving...");
     bool success = (move_group.execute(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
     if (success) {
@@ -124,7 +124,7 @@ bool CamperoUR10::execute() {
 
 bool CamperoUR10::plan_execute() {
     if (plan()) {
-        prompt("Press 'next' to execute plan");
+        //prompt("Press 'next' to execute plan");
         return execute();
     }
 
@@ -134,25 +134,44 @@ bool CamperoUR10::plan_execute() {
 bool CamperoUR10::plan_exec_Carthesian(std::vector<geometry_msgs::Pose>& waypoints) {
     planCarthesian(waypoints);
     
-    prompt("Press 'next' to execute plan");
+    //prompt("Press 'next' to execute plan");
 
     return execute();
 }
 
+bool CamperoUR10::moveJoint(const int joint, const double value) {
+    std::vector<double> v = move_group.getCurrentJointValues();
+    v[joint] = value;
+
+    if (move_group.setJointValueTarget(v)) {
+        bool success = (move_group.move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        if (success) {
+            move_group.setStartStateToCurrentState();
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool CamperoUR10::moveJoint(const std::string& joint, const double value) {
+    return moveJoint(jointName2Idx(joint), value);
+}
+
 bool CamperoUR10::goReadyDraw() {
-    print("1.Set correct orientation");
+    ROS_INFO("1.Set correct orientation");
 
     geometry_msgs::Pose target_ori = move_group.getCurrentPose().pose;
     target_ori.orientation = ori_constraint;
     move_group.setPoseTarget(target_ori);
 
     if (plan_execute()) {
-        print("2.Add orientation constraint");
+        ROS_INFO("2.Add orientation constraint");
         
         addOriConstraint();
         std::cout << move_group.getPathConstraints() << std::endl;
 
-        print("3.Go to ready draw position");
+        ROS_INFO("3.Go to ready draw position");
 
         move_group.setNamedTarget(C_UR10_POSE_READY_DRAW);
 
@@ -188,7 +207,7 @@ void CamperoUR10::addOriConstraint() {
     move_group.setStartState(start_state);
 }
 
-void CamperoUR10::drawCircle(const double x, const double y, const double r) {
+/*void CamperoUR10::drawCircle(const double x, const double y, const double r) {
     std::cout << "Drawing circle -> center (" << x << ", " << y  << ")"
                         << " r: " << r << std::endl;
     
@@ -225,18 +244,15 @@ void CamperoUR10::drawSin(const double x, const double y, const double maxX, con
     }
 
     plan_exec_Carthesian(waypoints);
-}
+}*/
 
 moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
     return move_group;
 }
 
-void CamperoUR10::points2Pose(geometry_msgs::PoseArray points) {
-    ROS_INFO("Points received -> Parse");
-}
-
 void CamperoUR10::callbackDraw(geometry_msgs::PoseArray points) {
     ROS_INFO("Points received -> Parse");
+    
     double div = 0.5/50;
     std::vector<geometry_msgs::Pose> waypoints;
     geometry_msgs::Pose target = move_group.getCurrentPose().pose;
@@ -245,11 +261,32 @@ void CamperoUR10::callbackDraw(geometry_msgs::PoseArray points) {
         target.position.y = -0.25 + points.poses[i].position.x * div;
         target.position.x = -0.45 + points.poses[i].position.y * div;
         waypoints.push_back(target);
-        std::cout << "Pt: (" << points.poses[i].position.x << ", " << points.poses[i].position.y << ") -> ("
-                    << target.position.y << ", " << target.position.x << ")\n";
+        /*std::cout << "Pt: (" << points.poses[i].position.x << ", " << points.poses[i].position.y << ") -> ("
+                    << target.position.y << ", " << target.position.x << ")\n";*/
     }
 
     plan_exec_Carthesian(waypoints);
+    ROS_INFO("Callback end");
+}
+
+void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
+    ROS_INFO("Operation received");
+    const int type = operation.type, id = operation.id;
+    const double v = operation.value;
+    
+    if (id < 0 || id > 5) {
+        ROS_INFO("Id %d not valid", id);
+    } else {
+        if (operation.type == campero_ur10_msgs::MoveOp::MOVE_JOINT) {
+            ROS_INFO("Moving joint: %d", id);
+            double f_v = v + move_group.getCurrentJointValues()[id];
+            ROS_INFO("New value target: %.2f rads", f_v);
+            moveJoint(id, f_v);
+        } else if (operation.type == campero_ur10_msgs::MoveOp::MOVE_CARTHESIAN) {
+            std::cout << "c\n";
+        }
+    }
+
     ROS_INFO("Callback end");
 }
 
@@ -262,11 +299,23 @@ void CamperoUR10::goHome() {
 }
 
 void CamperoUR10::main() {
+    /*std::vector<double> v = move_group.getCurrentJointValues();
+    for (int i = 0; i < v.size(); i++) {
+        std::cout << v[i] << std::endl;
+    }
+    moveJoint(C_UR10_SHOULDER_PAN_JOINT, 0.1);
+    v.clear();
+    v = move_group.getCurrentJointValues();
+    for (int i = 0; i < v.size(); i++) {
+        std::cout << v[i] << std::endl;
+    }
+    return;*/
     if (!goReadyDraw()) return;
 
-    std::cout << "hola\n";
+    std::cout << "READY\n";
     ros::Rate loop_rate(10);
-    sub_image = nh.subscribe(TOPIC_NAME, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
+    sub_image = nh.subscribe(TOPIC_NAME_BOARD, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
+    sub_move = nh.subscribe(TOPIC_NAME_MOVE, QUEUE_SIZE, &CamperoUR10::callbackMoveOp, this);
     while(ros::ok()) {
         ros::spinOnce();
         loop_rate.sleep();
