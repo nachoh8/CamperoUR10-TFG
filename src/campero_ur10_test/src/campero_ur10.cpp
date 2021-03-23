@@ -15,7 +15,7 @@
 #define NODE_NAME "campero_ur10"
 #define TOPIC_NAME_MOVE "campero_ur10_move"
 #define TOPIC_NAME_BOARD "image_points"
-#define QUEUE_SIZE 1000
+#define QUEUE_SIZE 10
 
 CamperoUR10::CamperoUR10() {
     // Create Orientation Constraint Quaternion
@@ -69,7 +69,7 @@ bool CamperoUR10::plan() {
 
     if (success) {
         ROS_INFO("Plan Ok");
-        showPlan();
+        //showPlan();
         return true;
     }
 
@@ -283,7 +283,25 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
             ROS_INFO("New value target: %.2f rads", f_v);
             moveJoint(id, f_v);
         } else if (operation.type == campero_ur10_msgs::MoveOp::MOVE_CARTHESIAN) {
-            std::cout << "c\n";
+            ROS_INFO("Moving carthesiand: %d", id);
+            geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
+            switch (id)
+            {
+            case campero_ur10_msgs::MoveOp::X_AXIS:
+                target_pose.position.x += v;
+                break;
+            
+            case campero_ur10_msgs::MoveOp::Y_AXIS:
+                target_pose.position.y += v;
+                break;
+            case campero_ur10_msgs::MoveOp::Z_AXIS:
+                target_pose.position.z += v;
+                break;
+            default:
+                break;
+            }
+            move_group.setPoseTarget(target_pose);
+            plan_execute();
         }
     }
 
@@ -310,11 +328,11 @@ void CamperoUR10::main() {
         std::cout << v[i] << std::endl;
     }
     return;*/
-    if (!goReadyDraw()) return;
+    //if (!goReadyDraw()) return;
 
     std::cout << "READY\n";
     ros::Rate loop_rate(10);
-    sub_image = nh.subscribe(TOPIC_NAME_BOARD, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
+    //sub_image = nh.subscribe(TOPIC_NAME_BOARD, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
     sub_move = nh.subscribe(TOPIC_NAME_MOVE, QUEUE_SIZE, &CamperoUR10::callbackMoveOp, this);
     while(ros::ok()) {
         ros::spinOnce();
