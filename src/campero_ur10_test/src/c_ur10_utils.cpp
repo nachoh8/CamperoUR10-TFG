@@ -50,3 +50,5 @@ const std::string C_UR10_EE_JOINT = "campero_ur10_ee_fixed_joint";
 const std::string C_UR10_POSE_INIT = "init";
 const std::string C_UR10_POSE_UP = "up";
 const std::string C_UR10_POSE_READY_DRAW = "ready_draw";
+const std::string C_UR10_POSE_READY_DRAW_PEN = "ready_draw_pen";
+

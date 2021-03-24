@@ -40,5 +40,6 @@ extern const std::string C_UR10_EE_JOINT; // = "campero_ur10_ee_fixed_joint";
 extern const std::string C_UR10_POSE_INIT;
 extern const std::string C_UR10_POSE_UP;
 extern const std::string C_UR10_POSE_READY_DRAW;
+extern const std::string C_UR10_POSE_READY_DRAW_PEN;
 
 #endif

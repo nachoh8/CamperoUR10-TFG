@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="debug" default="false" />
+  <arg name="mode" default="_" />
   <!--arg name="fWS" default="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/campero_ur10_test/param_files/ws.config"/-->
 
   <!-- GDB Debug Option -->
@@ -10,7 +11,8 @@
 
   <node name="campero_ur10_test" pkg="campero_ur10_test"
       type="campero_ur10_test" respawn="false" launch-prefix="$(arg launch_prefix)"
-      output="screen">
+      output="screen"
+      args="-m $(arg mode)">
       <!--args="-fws $(arg fWS)"-->
   </node>
 

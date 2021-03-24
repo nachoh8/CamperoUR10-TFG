@@ -40,6 +40,14 @@
         <joint name="campero_ur10_wrist_2_joint" value="-1.5706" />
         <joint name="campero_ur10_wrist_3_joint" value="1.2179" />
     </group_state>
+    <group_state name="ready_draw_pen" group="manipulator">
+        <joint name="campero_ur10_elbow_joint" value="2.393" />
+        <joint name="campero_ur10_shoulder_lift_joint" value="-1.9471" />
+        <joint name="campero_ur10_shoulder_pan_joint" value="-0.3516" />
+        <joint name="campero_ur10_wrist_1_joint" value="-2.0176" />
+        <joint name="campero_ur10_wrist_2_joint" value="-1.5716" />
+        <joint name="campero_ur10_wrist_3_joint" value="1.2174" />
+    </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="endeffector" parent_link="campero_ur10_wrist_3_link" group="endeffector" />
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->

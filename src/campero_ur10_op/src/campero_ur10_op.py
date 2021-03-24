@@ -8,12 +8,15 @@ TOPIC_NAME="campero_ur10_move"
 NODE_NAME="campero_ur10_operator"
 
 modeJoint = True #true -> joint, false->carthesian
-step = 0.1
-increase_step = 0.025
-max_step = 0.25
-time_sleep = 0.5
+step = 0.01
+increase_step = 0.01
+max_step = 0.1
+time_sleep = 0.75
 
 def getID(ch):
+    """
+    devuelve el id del joint/axis correspondiente a la tecla ch, -1 si no existe
+    """
     global modeJoint
 
     if ch == "q" or ch == "1":
@@ -50,6 +53,9 @@ def getID(ch):
     return -1
 
 def buildMsg(ch):
+    """
+    Devuelve un mensaje MoveOp a partir de la tecla ch y del step y modo actual
+    """
     global step, modeJoint
 
     id = getID(ch)
@@ -104,10 +110,10 @@ def main():
     # SETUP
     args = parser.parse_args()
 
-    step = args.step
+    max_step = args.MaxStep
     time_sleep = args.time
     
-    pub = rospy.Publisher(TOPIC_NAME, MoveOp, queue_size=10)
+    pub = rospy.Publisher(TOPIC_NAME, MoveOp, queue_size=1)
     rospy.init_node(NODE_NAME, anonymous=True)
 
     help()
@@ -126,6 +132,7 @@ def main():
         elif ch == "x": # change mode
             modeJoint = not modeJoint
             rospy.loginfo("Mode changed to " + ("Joint" if modeJoint else "Carthesian"))
+            printInfo()
         elif ch == "h": # show help
             help()
         elif ch == "i": # show info
@@ -145,10 +152,8 @@ def main():
         else:
             msg = buildMsg(ch)
             if msg is not None:
-                rospy.loginfo("Moving")
+                #rospy.loginfo("Moving")
                 pub.publish(msg)
-            else:
-                rospy.loginfo("Incorrect key")
 
         rospy.sleep(time_sleep)
         
@@ -156,8 +161,8 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CamperoUR10 Operator')
-    parser.add_argument("-s", "--step", type = float, help = 'step of each movement', default = 0.1)
-    parser.add_argument("-t", "--time", type = float, help = 'time to sleep in seconds', default = 0.5)
+    parser.add_argument("-ms", "--MaxStep", type = float, help = 'max step of each movement', default = 0.1)
+    parser.add_argument("-t", "--time", type = float, help = 'time to sleep in seconds', default = 0.75)
 
     try:
         main()

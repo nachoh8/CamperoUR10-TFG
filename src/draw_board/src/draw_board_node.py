@@ -2,39 +2,40 @@
 import argparse
 import rospy
 from geometry_msgs.msg import Pose, PoseArray
+from campero_ur10_msgs.msg import ImagePoint, ImageDraw
 
 import draw_board_cv as board
 
 TOPIC_NAME="image_points"
 NODE_NAME="draw_board"
 
-REAL_BOARD_SIZE = 50
-
-def points2Pose(points, div):
-    poses = PoseArray()
+def createImg(points, size):
+    if len(points) == 0:
+        return None
+    img = ImageDraw()
     i = 0
     for pt in points:
         x,y = pt
-        pose = Pose()
-        pose.position.x = x * div
-        pose.position.y = y * div
-        poses.poses.insert(i, pose)
-        i += 1
+        if x >= 0 and x < size and y >= 0 and y < size:
+            imgPoint = ImagePoint()
+            imgPoint.x = pt[0]
+            imgPoint.y = pt[1]
+            img.points.insert(i, imgPoint)
+            i += 1
     
-    return poses
+    img.size = size
+
+    return img
         
 
 def main():
     args = parser.parse_args()
 
     board_size = args.size
-    real_size = args.len
-    div = float(real_size)/float(board_size)
-    print(div)
     board.setupBoard(board_size)
     
 
-    pub = rospy.Publisher(TOPIC_NAME, PoseArray, queue_size=10)
+    pub = rospy.Publisher(TOPIC_NAME, ImageDraw, queue_size=1)
     rospy.init_node(NODE_NAME, anonymous=True)
     rate = rospy.Rate(10)
 
@@ -43,9 +44,12 @@ def main():
         if code == board.K_ESC:
             break
         elif code == board.K_SEND:
-            rospy.loginfo("Send Image")
-            poses = points2Pose(board.getPoints(), div)
-            pub.publish(poses)
+            img = createImg(board.getPoints(), board_size)
+            if img == None:
+                rospy.loginfo("Image Empty")
+            else:
+                rospy.loginfo("Send Image")
+                pub.publish(img)
 
         #pub.publish()
         rate.sleep()
@@ -56,7 +60,6 @@ def main():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Draw on board')
     parser.add_argument("-s", "--size", type = float, help = 'size of screen NxN', default = board.SIZE_DEFAULT)
-    parser.add_argument("-l", "--len", type = float, help = 'tamano del tablero real', default = REAL_BOARD_SIZE)
 
     try:
         main()

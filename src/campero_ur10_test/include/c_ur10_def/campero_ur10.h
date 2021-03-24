@@ -9,9 +9,11 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 #include <campero_ur10_msgs/MoveOp.h>
+#include <campero_ur10_msgs/ImageDraw.h>
 
 #include "c_ur10_utils.h"
 
+enum class C_UR10_Mode {DRAW_IMAGE, TELEOP};
 
 class CamperoUR10 {
 private:
@@ -33,14 +35,16 @@ private:
     geometry_msgs::Quaternion ori_constraint;
 
     ros::NodeHandle nh;
-    ros::Subscriber sub_image, sub_move;
+    ros::Subscriber sub;
+
+    C_UR10_Mode mode;
 
     void prompt(std::string msg);
 
     void showPlan();
 
 public:
-    CamperoUR10();
+    CamperoUR10(C_UR10_Mode _mode);
 
     bool plan();
     
@@ -68,7 +72,8 @@ public:
 
     void goHome();
 
-    void callbackDraw(geometry_msgs::PoseArray points);
+    //void callbackDraw(geometry_msgs::PoseArray points);
+    void callbackDraw(const campero_ur10_msgs::ImageDraw image);
 
     void callbackMoveOp(const campero_ur10_msgs::MoveOp operation);
 

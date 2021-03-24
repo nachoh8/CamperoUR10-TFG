@@ -16,8 +16,16 @@
 #define TOPIC_NAME_MOVE "campero_ur10_move"
 #define TOPIC_NAME_BOARD "image_points"
 #define QUEUE_SIZE 10
+#define REAL_SIZE_BOARD 0.5
+#define MIN_BOARD_X -0.45
+#define MIN_BOARD_Y -0.25
+#define Z_PEN_DOWN 1.05 // m
+#define Z_PEN_UP 1.07 // m
 
-CamperoUR10::CamperoUR10() {
+CamperoUR10::CamperoUR10(C_UR10_Mode _mode) {
+
+    mode = _mode;
+
     // Create Orientation Constraint Quaternion
     tf2::Quaternion ori;
     ori.setRPY(-1*M_PI, 0, 0);
@@ -173,7 +181,7 @@ bool CamperoUR10::goReadyDraw() {
 
         ROS_INFO("3.Go to ready draw position");
 
-        move_group.setNamedTarget(C_UR10_POSE_READY_DRAW);
+        move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
 
         /*geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
         target_pose.position.x += 0.25;
@@ -250,6 +258,7 @@ moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
     return move_group;
 }
 
+/*
 void CamperoUR10::callbackDraw(geometry_msgs::PoseArray points) {
     ROS_INFO("Points received -> Parse");
     
@@ -262,10 +271,45 @@ void CamperoUR10::callbackDraw(geometry_msgs::PoseArray points) {
         target.position.x = -0.45 + points.poses[i].position.y * div;
         waypoints.push_back(target);
         /*std::cout << "Pt: (" << points.poses[i].position.x << ", " << points.poses[i].position.y << ") -> ("
-                    << target.position.y << ", " << target.position.x << ")\n";*/
+                    << target.position.y << ", " << target.position.x << ")\n";
     }
 
     plan_exec_Carthesian(waypoints);
+    ROS_INFO("Callback end");
+}*/
+
+void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
+    ROS_INFO("Image received: %d points", image.points.size());
+    
+    const double div = REAL_SIZE_BOARD / image.size;
+
+    std::vector<geometry_msgs::Pose> waypoints;
+    geometry_msgs::Pose target = move_group.getCurrentPose().pose;
+    
+    // go to first point with pen down
+    target.position.y = MIN_BOARD_Y + image.points[0].x * div;
+    target.position.x = MIN_BOARD_X + image.points[0].y * div;
+    waypoints.push_back(target);
+
+    target.position.z = Z_PEN_DOWN;
+    for (int i = 0; i < image.points.size(); i++) {
+        target.position.y = MIN_BOARD_Y + image.points[i].x * div;
+        target.position.x = MIN_BOARD_X + image.points[i].y * div;
+        waypoints.push_back(target);
+    }
+
+    // pen up
+    target.position.z = Z_PEN_UP;
+    waypoints.push_back(target);
+
+    plan_exec_Carthesian(waypoints);
+
+    ROS_INFO("Move to ready position");
+
+    move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
+
+    plan_execute();
+    
     ROS_INFO("Callback end");
 }
 
@@ -283,24 +327,45 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
             ROS_INFO("New value target: %.2f rads", f_v);
             moveJoint(id, f_v);
         } else if (operation.type == campero_ur10_msgs::MoveOp::MOVE_CARTHESIAN) {
-            ROS_INFO("Moving carthesiand: %d", id);
-            geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
-            switch (id)
-            {
-            case campero_ur10_msgs::MoveOp::X_AXIS:
-                target_pose.position.x += v;
-                break;
+            ROS_INFO("Moving carthesian: %d", id);
             
-            case campero_ur10_msgs::MoveOp::Y_AXIS:
-                target_pose.position.y += v;
-                break;
-            case campero_ur10_msgs::MoveOp::Z_AXIS:
-                target_pose.position.z += v;
-                break;
-            default:
-                break;
+            if (id < campero_ur10_msgs::MoveOp::RX_AXIS) { // Pose
+                geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
+                switch (id)
+                {
+                case campero_ur10_msgs::MoveOp::X_AXIS:
+                    target_pose.position.x += v;
+                    break;
+                case campero_ur10_msgs::MoveOp::Y_AXIS:
+                    target_pose.position.y += v;
+                    break;
+                case campero_ur10_msgs::MoveOp::Z_AXIS:
+                    target_pose.position.z += v;
+                    break;
+                default:
+                    break;
+                }
+                ROS_INFO("Position target: (%.2f, %.2f, %2.f)", target_pose.position.x, target_pose.position.y, target_pose.position.z);
+                move_group.setPoseTarget(target_pose);
+            } else { // RPY
+                std::vector<double> rpy = move_group.getCurrentRPY();
+                switch (id)
+                {
+                case campero_ur10_msgs::MoveOp::RX_AXIS: // Roll
+                    rpy[0] += v;
+                    break;
+                case campero_ur10_msgs::MoveOp::RY_AXIS: // Pitch
+                    rpy[1] += v;
+                    break;
+                case campero_ur10_msgs::MoveOp::RZ_AXIS: // Yaw
+                    rpy[2] += v;
+                    break;
+                default:
+                    break;
+                }
+                ROS_INFO("RPY target: (%.2f, %.2f, %2.f)", rpy[0], rpy[1],rpy[2]);
+                move_group.setRPYTarget(rpy[0], rpy[1],rpy[2]);
             }
-            move_group.setPoseTarget(target_pose);
             plan_execute();
         }
     }
@@ -317,28 +382,38 @@ void CamperoUR10::goHome() {
 }
 
 void CamperoUR10::main() {
-    /*std::vector<double> v = move_group.getCurrentJointValues();
-    for (int i = 0; i < v.size(); i++) {
-        std::cout << v[i] << std::endl;
-    }
-    moveJoint(C_UR10_SHOULDER_PAN_JOINT, 0.1);
-    v.clear();
-    v = move_group.getCurrentJointValues();
-    for (int i = 0; i < v.size(); i++) {
-        std::cout << v[i] << std::endl;
-    }
-    return;*/
-    //if (!goReadyDraw()) return;
+    
+    switch (mode)
+    {
+    case C_UR10_Mode::DRAW_IMAGE:
+        ROS_INFO("Mode: Draw Image");
+        
+        // go ready draw position
+        if (!goReadyDraw()) return;
+        
+        sub = nh.subscribe(TOPIC_NAME_BOARD, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
+        break;
 
-    std::cout << "READY\n";
+    case C_UR10_Mode::TELEOP:
+        ROS_INFO("Mode: Teleop");
+        sub = nh.subscribe(TOPIC_NAME_MOVE, QUEUE_SIZE, &CamperoUR10::callbackMoveOp, this);
+        break;
+
+    default:
+        ROS_INFO("Mode not valid -> exit");
+        return;
+        break;
+    }
+
+    ROS_INFO("Campero_UR10 READY\n");
     ros::Rate loop_rate(10);
-    //sub_image = nh.subscribe(TOPIC_NAME_BOARD, QUEUE_SIZE, &CamperoUR10::callbackDraw, this);
-    sub_move = nh.subscribe(TOPIC_NAME_MOVE, QUEUE_SIZE, &CamperoUR10::callbackMoveOp, this);
+    
+    // wait
     while(ros::ok()) {
         ros::spinOnce();
         loop_rate.sleep();
     }
-    //ros::spin();
+    
 }
 
 /*void CamperoUR10::main() {
