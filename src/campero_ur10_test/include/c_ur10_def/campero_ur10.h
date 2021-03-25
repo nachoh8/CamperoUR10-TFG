@@ -28,8 +28,6 @@ private:
     moveit_visual_tools::MoveItVisualTools visual_tools = 
         moveit_visual_tools::MoveItVisualTools(C_UR10_BASE_LINK);
 
-    //moveit::core::RobotStatePtr kinematic_state;
-
     const double jump_threshold = 0.0, eef_step = 0.01; // for cartesian path
 
     geometry_msgs::Quaternion ori_constraint;
@@ -66,17 +64,16 @@ public:
 
     void main();
 
-    //void drawCircle(const double x, const double y, const double r);
-
-    //void drawSin(const double x, const double y, const double maxX, const double maxY);
-
     void goHome();
 
-    //void callbackDraw(geometry_msgs::PoseArray points);
     void callbackDraw(const campero_ur10_msgs::ImageDraw image);
 
     void callbackMoveOp(const campero_ur10_msgs::MoveOp operation);
 
     moveit::planning_interface::MoveGroupInterface& getMoveGroup();
+
+    //void drawCircle(const double x, const double y, const double r);
+
+    //void drawSin(const double x, const double y, const double maxX, const double maxY);
 };
 

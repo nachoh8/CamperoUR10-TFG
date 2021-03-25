@@ -2,13 +2,32 @@
 import argparse
 import rospy
 from geometry_msgs.msg import Pose, PoseArray
-from campero_ur10_msgs.msg import ImagePoint, ImageDraw
+from campero_ur10_msgs.msg import ImageDraw
 
-import draw_board_cv as board
+from draw_board_cv import BoardCV
+from draw_board_turtle import BoardTurtle
 
 TOPIC_NAME="image_points"
 NODE_NAME="draw_board"
 
+SIZE_DEFAULT = 512
+
+CV_TYPE=0
+TURTLE_TYPE=1
+
+K_ESC = 27 # escape
+K_SEND = 115 # s
+
+def getBoard(_type, size):
+    if _type == CV_TYPE:
+        return BoardCV(size)
+    elif _type == TURTLE_TYPE:
+        return BoardTurtle(size)
+    else:
+        return None
+
+
+"""
 def createImg(points, size):
     if len(points) == 0:
         return None
@@ -26,25 +45,30 @@ def createImg(points, size):
     img.size = size
 
     return img
-        
+"""
 
 def main():
     args = parser.parse_args()
 
     board_size = args.size
-    board.setupBoard(board_size)
+    board = getBoard(args.type, board_size)
+    
+    if board == None:
+        print("Board not valid")
+        exit(1)
     
 
     pub = rospy.Publisher(TOPIC_NAME, ImageDraw, queue_size=1)
     rospy.init_node(NODE_NAME, anonymous=True)
     rate = rospy.Rate(10)
 
+    print("Board Ready")
     while not rospy.is_shutdown():
         code = board.main()
-        if code == board.K_ESC:
+        if code == K_ESC:
             break
-        elif code == board.K_SEND:
-            img = createImg(board.getPoints(), board_size)
+        elif code == K_SEND:
+            img = board.getImgDraw()
             if img == None:
                 rospy.loginfo("Image Empty")
             else:
@@ -59,7 +83,9 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Draw on board')
-    parser.add_argument("-s", "--size", type = float, help = 'size of screen NxN', default = board.SIZE_DEFAULT)
+    parser.add_argument("-s", "--size", type = float, help = 'size of screen NxN', default = SIZE_DEFAULT)
+    parser.add_argument("-t", "--type", type = int , help = 'board type', default = CV_TYPE)
+
 
     try:
         main()
