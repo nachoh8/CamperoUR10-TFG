@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ImgPoint.msg
+  ImgTrace.msg
   ImageDraw.msg
   MoveOp.msg
 )

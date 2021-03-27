@@ -225,7 +225,54 @@ moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
     return move_group;
 }
 
+void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double div, std::vector<geometry_msgs::Pose>& waypoints) {
+    ROS_INFO("Trace: %d points", trace.points.size());
+
+    geometry_msgs::Pose target = move_group.getCurrentPose().pose;
+    
+    // go to first point with pen up
+    target.position.y = MIN_BOARD_Y + trace.points[0].x * div;
+    target.position.x = MIN_BOARD_X + trace.points[0].y * div;
+    waypoints.push_back(target);
+
+    // load draw
+    target.position.z = Z_PEN_DOWN;
+    for (int i = 0; i < trace.points.size(); i++) {
+        target.position.y = MIN_BOARD_Y + trace.points[i].x * div;
+        target.position.x = MIN_BOARD_X + trace.points[i].y * div;
+        waypoints.push_back(target);
+    }
+
+    // pen up
+    target.position.z = Z_PEN_UP;
+    waypoints.push_back(target);
+}
+
 void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
+    ROS_INFO("Image received: %d traces", image.traces.size());
+    
+    const double div = REAL_SIZE_BOARD / image.size;
+
+    std::vector<geometry_msgs::Pose> waypoints;
+    
+    for (int i = 0; i < image.traces.size(); i++) {
+        processTrace(image.traces[i], div, waypoints);
+    }
+    
+    // plan & execute
+    plan_exec_Carthesian(waypoints);
+
+    // go to ready draw posiyion
+    ROS_INFO("Move to ready position");
+
+    move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
+
+    plan_execute();
+    
+    ROS_INFO("Callback end");
+}
+
+/*void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     ROS_INFO("Image received: %d points", image.points.size());
     
     const double div = REAL_SIZE_BOARD / image.size;
@@ -261,7 +308,7 @@ void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     plan_execute();
     
     ROS_INFO("Callback end");
-}
+}*/
 
 void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
     ROS_INFO("Operation received");

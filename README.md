@@ -32,7 +32,7 @@ catkin_make
     - Descripción: Paquete que planifica y ejecuta las trayectorias del robot, hace de intermediario entre las aplicaciones a nivel de usuario y el robot en simulación/real
     - Uso:
     ```bash
-        roslaunch campero_ur10_server campero_ur10_server.launch mode:=(teleop | draw)
+        roslaunch campero_ur10_server (draw.launch | teleop.launch)
     ```
     
 - **campero_ur10_op**

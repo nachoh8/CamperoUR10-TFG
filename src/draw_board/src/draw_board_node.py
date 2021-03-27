@@ -5,7 +5,7 @@ from geometry_msgs.msg import Pose, PoseArray
 from campero_ur10_msgs.msg import ImageDraw
 
 from draw_board_cv import BoardCV
-from draw_board_turtle import BoardTurtle
+#from draw_board_turtle import BoardTurtle
 
 TOPIC_NAME="image_points"
 NODE_NAME="draw_board"
@@ -22,7 +22,7 @@ def getBoard(_type, size):
     if _type == CV_TYPE:
         return BoardCV(size)
     elif _type == TURTLE_TYPE:
-        return BoardTurtle(size)
+        return None#BoardTurtle(size)
     else:
         return None
 

@@ -10,6 +10,7 @@
 
 #include <campero_ur10_msgs/MoveOp.h>
 #include <campero_ur10_msgs/ImageDraw.h>
+#include <campero_ur10_msgs/ImgTrace.h>
 
 #include "c_ur10_utils.h"
 
@@ -65,6 +66,8 @@ public:
     void main();
 
     void goHome();
+
+    void processTrace(const campero_ur10_msgs::ImgTrace trace, const double div, std::vector<geometry_msgs::Pose>& waypoints);
 
     void callbackDraw(const campero_ur10_msgs::ImageDraw image);
 
