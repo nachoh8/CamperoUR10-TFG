@@ -11,7 +11,7 @@ modeJoint = True #true -> joint, false->carthesian
 step = 0.01
 increase_step = 0.01
 max_step = 0.1
-time_sleep = 0.75
+time_sleep = 1
 
 def getID(ch):
     """
@@ -51,6 +51,8 @@ def getID(ch):
             return MoveOp.RZ_AXIS
     
     return -1
+
+# TODO: combinar teclas para realizar trayectorias mas complejas
 
 def buildMsg(ch):
     """
@@ -139,16 +141,14 @@ def main():
             printInfo()
         elif ch == "+": # increase step
             v = step + increase_step
-            if v < max_step:
-                step = v
-            
+            step = v if v < max_step else max_step
             rospy.loginfo("Step: " + str(step))
+
         elif ch == "-": # increase step
             v = step - increase_step
-            if v > increase_step:
-                step = v
-            
+            step = v if v > increase_step else increase_step
             rospy.loginfo("Step: " + str(step))
+
         else:
             msg = buildMsg(ch)
             if msg is not None:
@@ -161,8 +161,8 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CamperoUR10 Operator')
-    parser.add_argument("-ms", "--MaxStep", type = float, help = 'max step of each movement', default = 0.1)
-    parser.add_argument("-t", "--time", type = float, help = 'time to sleep in seconds', default = 0.75)
+    parser.add_argument("-ms", "--MaxStep", type = float, help = 'max step of each movement', default = max_step)
+    parser.add_argument("-t", "--time", type = float, help = 'time to sleep in seconds', default = time_sleep)
 
     try:
         main()

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(campero_ur10_test)
+project(campero_ur10_server)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -51,9 +51,9 @@ target_link_libraries(c_ur10_def ${catkin_LIBRARIES})
 
 #link_directories(${catkin_LIBRARY_DIRS})
 
-add_executable(campero_ur10_test src/campero_ur10_test.cpp src/c_ur10_utils.cpp src/campero_ur10.cpp)
-target_link_libraries(campero_ur10_test c_ur10_def ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-install(TARGETS campero_ur10_test DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+add_executable(campero_ur10_server src/campero_ur10_server.cpp src/c_ur10_utils.cpp src/campero_ur10.cpp)
+target_link_libraries(campero_ur10_server c_ur10_def ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+install(TARGETS campero_ur10_server DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 
 

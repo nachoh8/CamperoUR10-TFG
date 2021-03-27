@@ -16,7 +16,6 @@ try:
         return sys.stdin.read(1)
     
     def restore_settings():
-        """aplica la configuración inicial de la terminal"""
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
     
     def clear_input():

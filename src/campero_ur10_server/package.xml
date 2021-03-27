@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>campero_ur10_test</name>
+  <name>campero_ur10_server</name>
   <version>0.0.0</version>
-  <description>The campero_ur10_test package</description>
+  <description>The campero_ur10_server package</description>
 
   <maintainer email="nachohseara@gmail.com">Ignacio H.S.</maintainer>
   

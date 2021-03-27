@@ -20,7 +20,7 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "move_group_interface_tutorial_ur10");
+  ros::init(argc, argv, "campero_ur10_server");
   ros::NodeHandle node_handle;
   
   // Load args

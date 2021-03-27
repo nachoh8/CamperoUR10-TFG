@@ -18,7 +18,7 @@
 #define TOPIC_NAME_TELEOP "campero_ur10_move"
 #define TOPIC_NAME_IMG_DRAW "image_points"
 
-#define QUEUE_SIZE_TELEOP 5 // teleop topic queue size
+#define QUEUE_SIZE_TELEOP 1 // teleop topic queue size
 #define QUEUE_SIZE_IMG_DRAW 1 // img_draw topic queue size
 
 #define REAL_SIZE_BOARD 0.5 // real size board
@@ -54,6 +54,17 @@ CamperoUR10::CamperoUR10(C_UR10_Mode _mode) {
     // Show Info
     ROS_INFO("tutorial", "Reference frame: %s", move_group.getPlanningFrame().c_str());
     ROS_INFO("tutorial", "End effector link: %s", move_group.getEndEffectorLink().c_str());
+    
+    /*planning_scene_monitor::CurrentStateMonitor::CurrentStateMonitor monitor()
+    robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
+    robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+    //robot_model::RobotModelPtr kinematic_model = (robot_model::RobotModelPtr)move_group.getRobotModel();
+    robot_state::RobotStatePtr kinematic_state(new robot_state::RobotState(kinematic_model));
+    //robot_state::RobotState robot_state(kinematic_model);
+    for (int i = 0; i < move_group.getJointNames().size(); i++) {
+        std::cout << (*kinematic_state->getJointVelocities(move_group.getJointNames()[i])) << std::endl;
+    }*/
+    
 }
 
 void CamperoUR10::prompt(std::string msg) {

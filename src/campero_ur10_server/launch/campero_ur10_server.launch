@@ -9,8 +9,8 @@
   <arg     if="$(arg debug)" name="launch_prefix"
      value="gdb -x $(find ur10_moveit_config)/launch/gdb_settings.gdb --ex run --args" />
 
-  <node name="campero_ur10_test" pkg="campero_ur10_test"
-      type="campero_ur10_test" respawn="false" launch-prefix="$(arg launch_prefix)"
+  <node name="campero_ur10_server" pkg="campero_ur10_server"
+      type="campero_ur10_server" respawn="false" launch-prefix="$(arg launch_prefix)"
       output="screen"
       args="-m $(arg mode)">
       <!--args="-fws $(arg fWS)"-->
