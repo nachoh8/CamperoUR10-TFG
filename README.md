@@ -49,8 +49,9 @@ catkin_make
  
  - **draw_board**
     - Descripción: Paquete que lanza una pizarra para dibujar, la imagen realizada se envía al nodo campero_ur10_server
-    - Uso:
+    - Uso: dos tipos uno dibujando a mano(draw_board_cv) y otro mas preciso(draw_board_turtle)
     ```bash
-        python draw_board_node.py [-s <size>]
+        python draw_board_cv.py [-s <size>]
+        python draw_board_turtle.py [-s <size>]
     ```
      por defecto -s = 512 pixeles, crea una pizarra de SxS pixeles
