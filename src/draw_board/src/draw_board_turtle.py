@@ -1,31 +1,28 @@
 import argparse
 import turtle
+from rospy import ROSInterruptException
 
-from campero_ur10_msgs.msg import ImagePoint, ImageDraw
+import sys
+sys.path.insert(1, '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib')
 
-#import tkSimpleDialog
+from image import MyImageDraw, SIZE_DEFAULT
+from node import DrawBoardNode
 
-"""
-Board Config
-"""
-
-SIZE_DEFAULT = 512
 
 STEP_DISTANCE = 1
-
-K_ESC = 27 # escape
-K_SEND = 115 # s
 
 class BoardTurtle:
     def __init__(self, size = SIZE_DEFAULT):
         self.size = SIZE_DEFAULT if size < 0 else size
 
+        self.node = DrawBoardNode()
+        self.image = MyImageDraw(self.size, self.size/2, -self.size/2)
+
         self.screen = turtle.Screen()
         self.screen.setup(self.size, self.size, 0, 0)
         self.t = turtle.Turtle()
         self.t.speed(-1)
-
-        self.points = []
+        self.t.penup()
 
         self.key = -1
 
@@ -35,7 +32,7 @@ class BoardTurtle:
         self.screen.onkey(self.move_left, "Left")
         self.screen.onkey(self.move_right, "Right")
         self.screen.onkey(self.clearBoard, "c")
-        self.screen.onkey(self.exit, "z")
+        self.screen.onkey(self.close, "z")
         self.screen.onkey(self.send, "s")
         self.screen.listen()
 
@@ -47,15 +44,17 @@ class BoardTurtle:
             self.t.penup()
         else:
             print("Pen Down")
+            self.image.addTrace()
             self.t.pendown()
     
     def clearBoard(self):
-        del self.points[:]
+        self.image.clear()
         self.t.clear()
 
     def move(self):
         if self.t.isdown():
-            self.points.insert(len(self.points), self.t.pos())
+            x,y = self.t.pos()
+            self.image.addPoint(x, y)
         self.t.forward(STEP_DISTANCE)
 
     def move_up(self):
@@ -75,31 +74,14 @@ class BoardTurtle:
         self.move()
 
     def close(self):
+        self.node.close()
         turtle.bye()
-
-    def exit(self):
-        self.key = K_ESC
     
     def send(self):
-        self.key = K_SEND
+        self.node.publishImage(self.image.getImgDraw())
 
     def getImgDraw(self):
-        if len(self.points) == 0:
-            return None
-        img = ImageDraw()
-        i = 0
-        for pt in self.points:
-            x,y = pt
-            if x >= 0 and x < self.size and y >= 0 and y < self.size:
-                imgPoint = ImagePoint()
-                imgPoint.x = pt[0]
-                imgPoint.y = pt[1]
-                img.points.insert(i, imgPoint)
-                i += 1
-        
-        img.size = self.size
-
-        return img
+        return self.image.getImgDraw()
 
     def main(self):
         k_last = self.key
@@ -107,5 +89,13 @@ class BoardTurtle:
         return k_last
 
 
-#board = BoardTurtle()
-#turtle.mainloop()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Draw on board')
+    parser.add_argument("-s", "--size", type = int, help = 'size of screen NxN', default = SIZE_DEFAULT)
+
+    args = parser.parse_args()
+    try:
+        board = BoardTurtle()
+        turtle.mainloop()
+    except ROSInterruptException:
+        pass
