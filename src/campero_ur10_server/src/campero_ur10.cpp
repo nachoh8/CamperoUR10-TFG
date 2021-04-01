@@ -329,10 +329,9 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
 
         } else if (operation.type == campero_ur10_msgs::MoveOp::MOVE_CARTHESIAN) {
             ROS_INFO("Moving carthesian: %d", id);
-            
-            if (id < campero_ur10_msgs::MoveOp::RX_AXIS) { // Pose
-                geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
 
+            geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
+            if (id < campero_ur10_msgs::MoveOp::RX_AXIS) { // XYZ
                 switch (id)
                 {
                 case campero_ur10_msgs::MoveOp::X_AXIS:
@@ -349,30 +348,36 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
                 }
 
                 ROS_INFO("Position target: (%.2f, %.2f, %2.f)", target_pose.position.x, target_pose.position.y, target_pose.position.z);
-                move_group.setPoseTarget(target_pose);
 
-            } else { // RPY
-                std::vector<double> rpy = move_group.getCurrentRPY();
-
+            }  else { // RPY
+                tf2::Quaternion q;
+                tf2::fromMsg(target_pose.orientation, q);
+                tf2::Matrix3x3 m(q);
+                double r, p, y;
+                m.getRPY(r, p, y);
+                
                 switch (id)
                 {
-                case campero_ur10_msgs::MoveOp::RX_AXIS: // Roll
-                    rpy[0] += v;
+                case campero_ur10_msgs::MoveOp::RX_AXIS:
+                    r += v;
                     break;
-                case campero_ur10_msgs::MoveOp::RY_AXIS: // Pitch
-                    rpy[1] += v;
+                case campero_ur10_msgs::MoveOp::RY_AXIS:
+                    p += v;
                     break;
-                case campero_ur10_msgs::MoveOp::RZ_AXIS: // Yaw
-                    rpy[2] += v;
+                case campero_ur10_msgs::MoveOp::RZ_AXIS:
+                    y += v;
                     break;
                 default:
                     break;
                 }
+                q.setRPY(r,p,y);
+                target_pose.orientation = tf2::toMsg(q.normalize());
 
-                ROS_INFO("RPY target: (%.2f, %.2f, %2.f)", rpy[0], rpy[1],rpy[2]);
-                move_group.setRPYTarget(rpy[0], rpy[1],rpy[2]);
+                ROS_INFO("RPY target: (%.2f, %.2f, %2.f)", r, p, y);
             }
+            
             // plan & eceute POSE/RPY
+            move_group.setPoseTarget(target_pose);
             plan_execute();
         }
     }

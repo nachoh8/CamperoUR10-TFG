@@ -8,9 +8,14 @@ NODE_NAME="speed_monitor"
 
 
 JOINT_COLORS = ["-b", "-r", "-g", "-y", "-k", "-m"]
-JOINT_NAMES = ["campero_ur10_shoulder_pan_joint", "campero_ur10_shoulder_lift_joint", "campero_ur10_elbow_joint",
-                "campero_ur10_wrist_1_joint", "campero_ur10_wrist_2_joint", "campero_ur10_wrist_1_joint"]
+JOINT_COLORS2 = ["blue", "red", "green", "yellow", "black", "magenta"]
+JOINT_NAMES = ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
+                "wrist_1_joint", "wrist_2_joint", "wrist_1_joint"]
 NUM_JOINTS = len(JOINT_NAMES)
+
+def printNames():
+    for i in range(NUM_JOINTS):
+        print(JOINT_COLORS2[i] + " -> " + JOINT_NAMES[i])
 
 def process(data):
     rospy.loginfo("----Message received----")
@@ -21,12 +26,6 @@ def process(data):
     joint_trajectory = res.planned_trajectory.joint_trajectory
     
     # process data
-    """
-    names = []
-    for n in joint_trajectory.joint_names:
-        names.insert(len(names), n)
-    """
-
     times = []
     speed = [[] for _ in JOINT_NAMES]
     speed_up = [[] for _ in JOINT_NAMES]
@@ -42,13 +41,21 @@ def process(data):
             speed[i].insert(len(speed[i]), v)
             speed_up[i].insert(len(speed_up[i]), a)
 
-    # plot data
+    # plot speed data
+    plt.subplot(2,1,1)
+    for i in range(NUM_JOINTS):
+        plt.plot(times, speed_up[i], JOINT_COLORS[i], label=JOINT_NAMES[i])
+    plt.ylabel("speed_up(rad/s^2)")
+
+    # plot speed_up data
+    plt.subplot(2,1,2)
     for i in range(NUM_JOINTS):
         plt.plot(times, speed[i], JOINT_COLORS[i], label=JOINT_NAMES[i])
+    plt.ylabel("speed(rad/s)")
     
+    # show plot
     plt.legend(loc="best")
     plt.xlabel("time(s)")
-    plt.ylabel("speed(rad/s)")
     plt.show()
 
     rospy.loginfo("----Callback end----")
