@@ -24,6 +24,7 @@ add_message_files(
   ImgPoint.msg
   ImgTrace.msg
   ImageDraw.msg
+  JointSpeed.msg
   MoveOp.msg
 )
 

@@ -50,13 +50,13 @@ class BoardCV:
 
         elif event == cv2.EVENT_MOUSEMOVE:
             if self.drawing == True:
-                cv2.line(self.screen,(self.pt1_x, self.pt1_y),(x,y),color=(255,255,255),thickness=3)
+                cv2.line(self.screen,(self.pt1_x, self.pt1_y),(x,y),color=(255,255,255),thickness=1)
                 self.pt1_x, self.pt1_y = x,y
                 self.image.addPoint(x,y)
                 
         elif event == cv2.EVENT_LBUTTONUP:
             self.drawing = False
-            cv2.line(self.screen,(self.pt1_x, self.pt1_y),(x,y),color=(255,255,255),thickness=3)
+            cv2.line(self.screen,(self.pt1_x, self.pt1_y),(x,y),color=(255,255,255),thickness=1)
     
     def getImgDraw(self):
         return self.image.getImgDraw()
