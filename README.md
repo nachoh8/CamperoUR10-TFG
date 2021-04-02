@@ -55,3 +55,11 @@ catkin_make
         python draw_board_turtle.py [-s <size>]
     ```
      por defecto -s = 512 pixeles, crea una pizarra de SxS pixeles
+
+- **monitoring_tools**
+    - Descripción: Paquete con herramientas para monitorear el robot
+    - Uso speed_monitor: monitorea la velocidad de los joint
+    ```bash
+        python speed_monitor.py [-plt]
+    ```
+     si se especifica -plt entonces al terminar una trayectoria se muestra una gráfica velocidad-tiempo
