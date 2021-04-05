@@ -29,7 +29,9 @@ private:
     moveit_visual_tools::MoveItVisualTools visual_tools = 
         moveit_visual_tools::MoveItVisualTools(C_UR10_BASE_LINK);
 
-    const double jump_threshold = 0.0, eef_step = 0.01; // for cartesian path
+    // eef_step: max distancia entre dos puntos consecutivos en la trayectoria cartesiana resultante
+    // jump_threshold poner 0 para evitar saltos en las soluciones con IK
+    const double jump_threshold = 0.0, eef_step = 0.01;
 
     geometry_msgs::Quaternion ori_constraint;
 

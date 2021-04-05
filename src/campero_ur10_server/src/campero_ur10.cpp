@@ -123,9 +123,9 @@ double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) 
     
     // Get RobotTrajectory_msg from RobotTrajectory
     rt.getRobotTrajectoryMsg(trajectory);
-
+    
     my_plan.trajectory_ = trajectory;
-
+    
     return fraction;
 }
 
@@ -207,7 +207,7 @@ void CamperoUR10::addOriConstraint() {
     ocm.weight = 1.0;
     ocm.absolute_x_axis_tolerance = 0.1;
     ocm.absolute_y_axis_tolerance = 0.1;
-    ocm.absolute_z_axis_tolerance = 0.1;
+    ocm.absolute_z_axis_tolerance = 2*M_PI;
     ocm.orientation = ori_constraint;
 
     moveit_msgs::Constraints constraints;
@@ -254,20 +254,20 @@ void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     const double div = REAL_SIZE_BOARD / image.size;
 
     std::vector<geometry_msgs::Pose> waypoints;
-    
+
     for (int i = 0; i < image.traces.size(); i++) {
         processTrace(image.traces[i], div, waypoints);
     }
     
     // plan & execute
-    plan_exec_Carthesian(waypoints);
+    if (plan_exec_Carthesian(waypoints)) {
+        // go to ready draw posiyion
+        ROS_INFO("Move to ready position");
 
-    // go to ready draw posiyion
-    ROS_INFO("Move to ready position");
+        move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
 
-    //move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
-
-    //plan_execute();
+        plan_execute();
+    }
     
     ROS_INFO("Callback end");
 }
@@ -381,7 +381,7 @@ void CamperoUR10::main() {
 
     ROS_INFO("Campero_UR10 READY\n");
     ros::Rate loop_rate(10);
-    
+
     // wait
     while(ros::ok()) {
         ros::spinOnce();
