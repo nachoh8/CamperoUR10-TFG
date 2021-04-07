@@ -10,9 +10,27 @@ Uso del entorno ROS con la interfaz Rviz para el control del robot manipulador U
 - Python 2.7
 - C++ 11
 
-## Compilar
+## Compilar/Ejecutar
+- Compilar comando:
 ```bash
 catkin_make
+```
+- Cambios necesarios en archivos antes de ejecutar:
+    - src/campero_ur10_moveit/launch/demo.launch: en la linea 58 sustituir "/home/nacho8/ROS_workspaces/campero_ur10_ws/ws_walls.scene" por la ruta de vuestro              ordenador "tu_ruta/campero_ur10_ws/ws_walls.scene"
+    - src/description/ur10_campero.urdf.xacro: en la linea 25 sustituir "/home/nacho8/ROS_workspaces/campero_ur10_ws/ws_walls.scene" por la ruta de vuestro              ordenador "tu_ruta/campero_ur10_ws/src/description/ur_description/urdf/ur10.urdf.xacro"
+    - src/draw_board/src/draw_board_cv.py: en la linea 7 sustituir '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib' por la ruta de vuestro              ordenador 'tu_ruta/campero_ur10_ws/src/draw_board/lib'
+    - src/draw_board/src/draw_board_cv.py: en la linea 6 sustituir '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib' por la ruta de vuestro              ordenador 'tu_ruta/campero_ur10_ws/src/draw_board/lib'
+
+- Antes de ejecutar cualquier .launch, es necesario realizar:
+```bash
+source devel/setup.bash
+```
+- Si después de haber realizado los pasos anteriores no se encuentran los paquetes al hacer roslaunch, hacer lo siguiente desde el directorio del workspace:
+```bash
+rospack find campero_ur10_moveit
+rospack find campero_ur10_msgs
+rospack find campero_ur10_server
+source devel/setup.bash
 ```
 
 ## Paquetes
@@ -22,7 +40,7 @@ catkin_make
     ```bash
         roslaunch campero_ur10_moveit demo.launch [scene_file:=scene.scene]
     ```
-     por defecto scene_file:=ws_walls.scene
+     por defecto scene_file:=ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
 
 - **campero_ur10_msgs**
     - Descripción: Paquete que contiene la definición de mensajes para operar el robot
@@ -62,4 +80,8 @@ catkin_make
     ```bash
         python speed_monitor.py [-plt]
     ```
-     si se especifica -plt entonces al terminar una trayectoria se muestra una gráfica velocidad-tiempo
+    - Uso stop_robot: programa que permite cancelar la ejecución actual del robot
+    ```bash
+        python stop_robot.py
+    ```
+     Una vez lanzado el programa, pulsar Enter para detener al robot y z para salir del programa
