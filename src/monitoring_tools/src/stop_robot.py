@@ -16,7 +16,7 @@ def main():
     rospy.loginfo("---Stop Program Ready---")
     
     finish = False
-    stopped = False
+    
     while not rospy.is_shutdown() and not finish:
         s = raw_input("---Press Enter to Stop the Robot or z to end program--- ")
         if s == "":

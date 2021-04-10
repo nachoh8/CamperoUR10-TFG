@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="debug" default="false" />
+  <arg name="draw_config" default="$(find campero_ur10_server)/config/ur10_draw.config"/>
   <!--arg name="fWS" default="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/campero_ur10_test/param_files/ws.config"/-->
 
   <!-- GDB Debug Option -->
@@ -11,7 +12,7 @@
   <node name="campero_ur10_server" pkg="campero_ur10_server"
       type="campero_ur10_server" respawn="false" launch-prefix="$(arg launch_prefix)"
       output="screen"
-      args="-m draw">
+      args="-m draw -conf $(arg draw_config)">
       <!--args="-fws $(arg fWS)"-->
   </node>
 

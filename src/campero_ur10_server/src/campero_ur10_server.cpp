@@ -24,10 +24,13 @@ int main(int argc, char** argv) {
   ros::NodeHandle node_handle;
   
   // Load args
-  string mode = "";
+  string mode = "", config_file = "";
   for (int i = 0; i < argc; i++) {
+
     if (!strcmp("-m", argv[i])) {
       mode = argv[++i];
+    } else if (!strcmp("-conf", argv[i])) {
+      config_file = argv[++i];
     }
   }
 
@@ -35,8 +38,15 @@ int main(int argc, char** argv) {
 
   if (mode == "teleop") {
     _mode = C_UR10_Mode::TELEOP;
+
+    if (config_file.empty()) {
+      ROS_INFO("Config file is empty");
+      return -1;
+    }
+
   } else if (mode == "draw") {
     _mode = C_UR10_Mode::DRAW_IMAGE;
+  
   } else {
     ROS_INFO("Mode not valid");
     return -1;
@@ -45,7 +55,7 @@ int main(int argc, char** argv) {
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  CamperoUR10 c_ur10(_mode);
+  CamperoUR10 c_ur10(_mode, config_file);
   c_ur10.main();
 
 

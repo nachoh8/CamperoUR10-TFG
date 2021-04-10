@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <fstream>
 
 #include <ros/ros.h>
 
@@ -21,14 +22,25 @@
 #define QUEUE_SIZE_TELEOP 1 // teleop topic queue size
 #define QUEUE_SIZE_IMG_DRAW 1 // img_draw topic queue size
 
-#define REAL_SIZE_BOARD 0.5 // real size board
-#define MIN_BOARD_X -0.45 // real board position
-#define MIN_BOARD_Y -0.25
-#define Z_PEN_DOWN 1.05 // z position when robot is drawing
-#define Z_PEN_UP 1.07 // z position when robot is not drawing
+// #define REAL_SIZE_BOARD 0.5 // real size board
+// #define MIN_BOARD_X -0.45 // real board position
+// #define MIN_BOARD_Y -0.25
+// #define Z_PEN_DOWN 1.05 // z position when robot is drawing
+// #define Z_PEN_UP 1.07 // z position when robot is not drawing
 
-CamperoUR10::CamperoUR10(C_UR10_Mode _mode) {
+#define FIELD_SIZE_BOARD "#SIZE_BOARD"
+#define FIELD_MIN_BOARD_X "#MIN_BOARD_X"
+#define FIELD_MIN_BOARD_Y "#MIN_BOARD_Y"
+#define FIELD_Z_PEN_DOWN "#Z_PEN_DOWN"
+#define FIELD_Z_PEN_UP "#Z_PEN_UP"
 
+CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file) {
+    init(_mode);
+    
+    if (!config_file.empty()) loadDrawConfig(config_file);
+}
+
+void CamperoUR10::init(C_UR10_Mode _mode) {
     mode = _mode;
 
     // Create Orientation Constraint Quaternion
@@ -42,6 +54,8 @@ CamperoUR10::CamperoUR10(C_UR10_Mode _mode) {
 
     move_group.setMaxVelocityScalingFactor(0.1);
 
+    // move_group.setMaxAccelerationScalingFactor(1);
+
     move_group.setStartStateToCurrentState();
 
     // Load Visual Tools
@@ -54,17 +68,36 @@ CamperoUR10::CamperoUR10(C_UR10_Mode _mode) {
     // Show Info
     ROS_INFO("tutorial", "Reference frame: %s", move_group.getPlanningFrame().c_str());
     ROS_INFO("tutorial", "End effector link: %s", move_group.getEndEffectorLink().c_str());
-    
-    /*planning_scene_monitor::CurrentStateMonitor::CurrentStateMonitor monitor()
-    robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
-    robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
-    //robot_model::RobotModelPtr kinematic_model = (robot_model::RobotModelPtr)move_group.getRobotModel();
-    robot_state::RobotStatePtr kinematic_state(new robot_state::RobotState(kinematic_model));
-    //robot_state::RobotState robot_state(kinematic_model);
-    for (int i = 0; i < move_group.getJointNames().size(); i++) {
-        std::cout << (*kinematic_state->getJointVelocities(move_group.getJointNames()[i])) << std::endl;
-    }*/
-    
+}
+
+
+void CamperoUR10::loadDrawConfig(std::string& file) {
+    std::fstream fin;
+    fin.open(file, std::ios::in);
+
+    std::string line;
+    while (!fin.eof()) {
+        getline(fin, line);
+        
+        if (line.compare(FIELD_SIZE_BOARD) == 0) {
+            fin >> board_size;
+            
+        } else if (line.compare(FIELD_MIN_BOARD_X) == 0) {
+            fin >> board_min_x;
+            
+        } else if (line.compare(FIELD_MIN_BOARD_Y) == 0) {
+            fin >> board_min_y;
+            
+        } else if (line.compare(FIELD_Z_PEN_DOWN) == 0) {
+            fin >> z_pen_down;
+
+        } else if (line.compare(FIELD_Z_PEN_UP) == 0) {
+            fin >> z_pen_up;
+            
+        }
+    }
+
+    fin.close();
 }
 
 void CamperoUR10::prompt(std::string msg) {
@@ -231,27 +264,27 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
     geometry_msgs::Pose target = move_group.getCurrentPose().pose;
     
     // go to first point with pen up
-    target.position.y = MIN_BOARD_Y + trace.points[0].x * div;
-    target.position.x = MIN_BOARD_X + trace.points[0].y * div;
+    target.position.y = board_min_y + trace.points[0].x * div;
+    target.position.x = board_min_x + trace.points[0].y * div;
     waypoints.push_back(target);
 
     // load draw
-    target.position.z = Z_PEN_DOWN;
+    target.position.z = z_pen_down;
     for (int i = 0; i < trace.points.size(); i++) {
-        target.position.y = MIN_BOARD_Y + trace.points[i].x * div;
-        target.position.x = MIN_BOARD_X + trace.points[i].y * div;
+        target.position.y = board_min_y + trace.points[i].x * div;
+        target.position.x = board_min_x + trace.points[i].y * div;
         waypoints.push_back(target);
     }
 
     // pen up
-    target.position.z = Z_PEN_UP;
+    target.position.z = z_pen_up;
     waypoints.push_back(target);
 }
 
 void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     ROS_INFO("Image received: %d traces", image.traces.size());
     
-    const double div = REAL_SIZE_BOARD / image.size;
+    const double div = board_size / image.size;
 
     std::vector<geometry_msgs::Pose> waypoints;
 
@@ -315,6 +348,7 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
                 tf2::Quaternion q;
                 tf2::fromMsg(target_pose.orientation, q);
                 tf2::Matrix3x3 m(q);
+
                 double r, p, y;
                 m.getRPY(r, p, y);
                 
@@ -360,12 +394,29 @@ void CamperoUR10::main() {
     switch (mode)
     {
     case C_UR10_Mode::DRAW_IMAGE:
-        ROS_INFO("Mode: Draw Image");
-        
-        // go ready draw position
-        if (!goReadyDraw()) return;
-        
-        sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
+        {
+            ROS_INFO("Mode: Draw Image");
+            
+            std::string s = "Z_PEN_DOWN: " + std::to_string(z_pen_down);
+            ROS_INFO(s.c_str());
+            s = "Z_PEN_UP: " + std::to_string(z_pen_up);
+            ROS_INFO(s.c_str());
+            s = "BOARD_SIZE: " + std::to_string(board_size);
+            ROS_INFO(s.c_str());
+            s = "BOARD_X: " + std::to_string(board_min_x);
+            ROS_INFO(s.c_str());
+            s = "BOARD_Y: " + std::to_string(board_min_y);
+            ROS_INFO(s.c_str());
+
+            if (z_pen_down == -1 || z_pen_up == -1 || board_size == -1 || board_min_x == -1 || board_min_y == -1) {
+                ROS_INFO("Incorrect configuration");
+                return;
+            }
+            // go ready draw position
+            if (!goReadyDraw()) return;
+
+            sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
+        }
         break;
 
     case C_UR10_Mode::TELEOP:
@@ -376,7 +427,6 @@ void CamperoUR10::main() {
     default:
         ROS_INFO("Mode not valid -> exit");
         return;
-        break;
     }
 
     ROS_INFO("Campero_UR10 READY\n");

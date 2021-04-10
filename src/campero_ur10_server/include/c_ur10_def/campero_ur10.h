@@ -29,6 +29,9 @@ private:
     moveit_visual_tools::MoveItVisualTools visual_tools = 
         moveit_visual_tools::MoveItVisualTools(C_UR10_BASE_LINK);
 
+    // Draw Board parameters
+    double z_pen_down = -1.0, z_pen_up = -1.0, board_min_x = -1.0, board_min_y = -1.0, board_size = -1.0;
+
     // eef_step: max distancia entre dos puntos consecutivos en la trayectoria cartesiana resultante
     // jump_threshold poner 0 para evitar saltos en las soluciones con IK
     const double jump_threshold = 0.0, eef_step = 0.01;
@@ -44,8 +47,12 @@ private:
 
     void showPlan();
 
+    void init(C_UR10_Mode _mode);
+
+    void loadDrawConfig(std::string& file);
+
 public:
-    CamperoUR10(C_UR10_Mode _mode);
+    CamperoUR10(C_UR10_Mode _mode, std::string& config_file);
 
     bool plan();
     
