@@ -21,8 +21,8 @@
 	<xacro:property name="PI" value="3.1415926535897931"/>
 	
 	<!-- Include UR-10 ARM -->
-	<!-- xacro:include filename="$(find ur_description)/urdf/ur10.urdf.xacro" /-->
-	<xacro:include filename="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/description/ur_description/urdf/ur10.urdf.xacro" />    
+	<xacro:include filename="$(find ur10_description)/urdf/ur10.urdf.xacro" />
+	<!--xacro:include filename="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/description/ur_description/urdf/ur10.urdf.xacro" /-->
 
 	<!-- Include force sensor description -->
 	<!--xacro:include filename="$(find campero_description)/urdf/robotiq_force_torque_sensor/robotiq_fts300.urdf.xacro"/-->
@@ -143,7 +143,7 @@
 		
 
 		<!-- UR-10 ARM -->
-		<xacro:arg name="kinematics_config" default="$(find ur_description)/config/ur10_default.yaml"/>
+		<xacro:arg name="kinematics_config" default="$(find ur10_description)/config/ur10_default.yaml"/>
 		<xacro:ur10_robot prefix="$(arg prefix)ur10_" joint_limited="true"
 			shoulder_pan_lower_limit="${-PI}" shoulder_pan_upper_limit="${PI}"
     		shoulder_lift_lower_limit="${-PI}" shoulder_lift_upper_limit="${PI}"
