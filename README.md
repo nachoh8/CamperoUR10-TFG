@@ -16,8 +16,6 @@ Uso del entorno ROS con la interfaz Rviz para el control del robot manipulador U
 catkin_make
 ```
 - Cambios necesarios en archivos antes de ejecutar:
-    - src/campero_ur10_moveit/launch/demo.launch: en la linea 58 sustituir "/home/nacho8/ROS_workspaces/campero_ur10_ws/ws_walls.scene" por la ruta de vuestro              ordenador "tu_ruta/campero_ur10_ws/ws_walls.scene"
-    - src/description/ur10_campero.urdf.xacro: en la linea 25 sustituir "/home/nacho8/ROS_workspaces/campero_ur10_ws/ws_walls.scene" por la ruta de vuestro              ordenador "tu_ruta/campero_ur10_ws/src/description/ur_description/urdf/ur10.urdf.xacro"
     - src/draw_board/src/draw_board_cv.py: en la linea 7 sustituir '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib' por la ruta de vuestro              ordenador 'tu_ruta/campero_ur10_ws/src/draw_board/lib'
     - src/draw_board/src/draw_board_cv.py: en la linea 6 sustituir '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib' por la ruta de vuestro              ordenador 'tu_ruta/campero_ur10_ws/src/draw_board/lib'
 
@@ -50,9 +48,9 @@ source devel/setup.bash
     - Descripción: Paquete que planifica y ejecuta las trayectorias del robot, hace de intermediario entre las aplicaciones a nivel de usuario y el robot en simulación/real
     - Uso:
     ```bash
-        roslaunch campero_ur10_server (draw.launch | teleop.launch)
+        roslaunch campero_ur10_server (draw.launch draw_config:=<file> | teleop.launch)
     ```
-    
+    En caso de draw.launch, por defecto draw_config:=../campero_ur10_server/config/ur10_draw.config
 - **campero_ur10_op**
     - Descripción: Paquete para teleoperar el robot mediante teclado, tiene dos modos(cartesiano y articular),envía los conmandos al nodo campero_ur10_server
     - Uso:
