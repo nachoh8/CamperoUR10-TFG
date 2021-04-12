@@ -15,10 +15,6 @@ Uso del entorno ROS con la interfaz Rviz para el control del robot manipulador U
 ```bash
 catkin_make
 ```
-- Cambios necesarios en archivos antes de ejecutar:
-    - src/draw_board/src/draw_board_cv.py: en la linea 7 sustituir '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib' por la ruta de vuestro              ordenador 'tu_ruta/campero_ur10_ws/src/draw_board/lib'
-    - src/draw_board/src/draw_board_cv.py: en la linea 6 sustituir '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib' por la ruta de vuestro              ordenador 'tu_ruta/campero_ur10_ws/src/draw_board/lib'
-
 - Antes de ejecutar cualquier .launch, es necesario realizar:
 ```bash
 source devel/setup.bash
