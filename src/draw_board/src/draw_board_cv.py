@@ -4,7 +4,9 @@ import numpy as np
 from rospy import ROSInterruptException
 
 import sys
-sys.path.insert(1, '/home/nacho8/ROS_workspaces/campero_ur10_ws/src/draw_board/lib')
+from os import path
+
+sys.path.insert(1, path.dirname(path.dirname(__file__))+"/lib") # add path to ../lib
 
 from image import MyImageDraw, SIZE_DEFAULT
 from node import DrawBoardNode
