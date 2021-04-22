@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="debug" default="false" />
+  <arg name="ori" default="0" />
   <!--arg name="fWS" default="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/campero_ur10_test/param_files/ws.config"/-->
 
   <!-- GDB Debug Option -->
@@ -11,7 +12,7 @@
   <node name="campero_ur10_server" pkg="campero_ur10_server"
       type="campero_ur10_server" respawn="false" launch-prefix="$(arg launch_prefix)"
       output="screen"
-      args="-m teleop">
+      args="-m teleop -ori $(arg ori)">
       <!--args="-fws $(arg fWS)"-->
   </node>
 

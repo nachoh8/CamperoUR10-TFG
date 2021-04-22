@@ -25,12 +25,16 @@ int main(int argc, char** argv) {
   
   // Load args
   string mode = "", config_file = "";
+  bool ori_constraint_teleop = false;
+
   for (int i = 0; i < argc; i++) {
 
     if (!strcmp("-m", argv[i])) {
       mode = argv[++i];
     } else if (!strcmp("-conf", argv[i])) {
       config_file = argv[++i];
+    } else if (!strcmp("-ori", argv[i])) {
+      ori_constraint_teleop = (atoi(argv[++i]) == 1);
     }
   }
 
@@ -39,13 +43,13 @@ int main(int argc, char** argv) {
   if (mode == "teleop") {
     _mode = C_UR10_Mode::TELEOP;
 
+  } else if (mode == "draw") {
+    _mode = C_UR10_Mode::DRAW_IMAGE;
+
     if (config_file.empty()) {
       ROS_INFO("Config file is empty");
       return -1;
     }
-
-  } else if (mode == "draw") {
-    _mode = C_UR10_Mode::DRAW_IMAGE;
   
   } else {
     ROS_INFO("Mode not valid");
@@ -55,7 +59,7 @@ int main(int argc, char** argv) {
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  CamperoUR10 c_ur10(_mode, config_file);
+  CamperoUR10 c_ur10(_mode, config_file, ori_constraint_teleop);
   c_ur10.main();
 
 

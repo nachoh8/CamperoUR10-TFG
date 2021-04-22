@@ -22,21 +22,17 @@
 #define QUEUE_SIZE_TELEOP 1 // teleop topic queue size
 #define QUEUE_SIZE_IMG_DRAW 1 // img_draw topic queue size
 
-// #define REAL_SIZE_BOARD 0.5 // real size board
-// #define MIN_BOARD_X -0.45 // real board position
-// #define MIN_BOARD_Y -0.25
-// #define Z_PEN_DOWN 1.05 // z position when robot is drawing
-// #define Z_PEN_UP 1.07 // z position when robot is not drawing
-
 #define FIELD_SIZE_BOARD "#SIZE_BOARD"
 #define FIELD_MIN_BOARD_X "#MIN_BOARD_X"
 #define FIELD_MIN_BOARD_Y "#MIN_BOARD_Y"
 #define FIELD_Z_PEN_DOWN "#Z_PEN_DOWN"
 #define FIELD_Z_PEN_UP "#Z_PEN_UP"
 
-CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file) {
+CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori) {
     init(_mode);
     
+    add_ori = _add_ori;
+
     if (!config_file.empty()) loadDrawConfig(config_file);
 }
 
@@ -211,29 +207,26 @@ bool CamperoUR10::moveJoint(const std::string& joint, const double value) {
 }
 
 bool CamperoUR10::goReadyDraw() {
+    
+        
+    if (!addOriConstraint()) return false;
+
+    ROS_INFO("Go to ready draw position");
+    move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
+
+    return plan_execute();
+}
+
+bool CamperoUR10::addOriConstraint() {
     ROS_INFO("1.Set correct orientation");
 
     geometry_msgs::Pose target_ori = move_group.getCurrentPose().pose;
     target_ori.orientation = ori_constraint;
     move_group.setPoseTarget(target_ori);
+    if (!plan_execute()) return false;
 
-    if (plan_execute()) {
-        ROS_INFO("2.Add orientation constraint");
-        
-        addOriConstraint();
-        std::cout << move_group.getPathConstraints() << std::endl;
+    ROS_INFO("2.Add orientation constraint");
 
-        ROS_INFO("3.Go to ready draw position");
-
-        move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
-
-        return plan_execute();
-    }
-
-    return false;
-}
-
-void CamperoUR10::addOriConstraint() {
     moveit_msgs::OrientationConstraint ocm;
     ocm.link_name = C_UR10_W3_LINK;
     ocm.header.frame_id = C_UR10_BASE_LINK;
@@ -251,6 +244,10 @@ void CamperoUR10::addOriConstraint() {
     geometry_msgs::Pose start_pose2 = move_group.getCurrentPose().pose;
     start_state.setFromIK(joint_model_group, start_pose2);
     move_group.setStartState(start_state);
+
+    std::cout << move_group.getPathConstraints() << std::endl;
+
+    return true;
 }
 
 
@@ -421,6 +418,11 @@ void CamperoUR10::main() {
 
     case C_UR10_Mode::TELEOP:
         ROS_INFO("Mode: Teleop");
+        
+        if (add_ori) { // add orientation constraint
+            if (!addOriConstraint()) return;
+        }
+
         sub = nh.subscribe(TOPIC_NAME_TELEOP, QUEUE_SIZE_TELEOP, &CamperoUR10::callbackMoveOp, this);
         break;
 

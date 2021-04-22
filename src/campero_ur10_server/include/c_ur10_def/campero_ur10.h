@@ -29,6 +29,9 @@ private:
     moveit_visual_tools::MoveItVisualTools visual_tools = 
         moveit_visual_tools::MoveItVisualTools(C_UR10_BASE_LINK);
 
+    // Teleop parameters
+    bool add_ori;
+
     // Draw Board parameters
     double z_pen_down = -1.0, z_pen_up = -1.0, board_min_x = -1.0, board_min_y = -1.0, board_size = -1.0;
 
@@ -52,7 +55,7 @@ private:
     void loadDrawConfig(std::string& file);
 
 public:
-    CamperoUR10(C_UR10_Mode _mode, std::string& config_file);
+    CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori);
 
     bool plan();
     
@@ -70,7 +73,7 @@ public:
 
     bool goReadyDraw();
 
-    void addOriConstraint();
+    bool addOriConstraint();
 
     void main();
 
