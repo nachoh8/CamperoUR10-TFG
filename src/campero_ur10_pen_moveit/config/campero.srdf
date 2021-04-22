@@ -36,7 +36,7 @@
         <joint name="campero_ur10_wrist_2_joint" value="-1.57" />
         <joint name="campero_ur10_wrist_3_joint" value="0" />
     </group_state>
-    <group_state name="init" group="manipulator">
+    <group_state name="home" group="manipulator">
         <joint name="campero_ur10_elbow_joint" value="0" />
         <joint name="campero_ur10_shoulder_lift_joint" value="0" />
         <joint name="campero_ur10_shoulder_pan_joint" value="0" />
@@ -113,7 +113,6 @@
     <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_left_finger_tip_link" reason="Never" />
     <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_left_inner_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_left_knuckle_link" reason="Never" />
-    <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_right_finger_link" reason="Never" />
     <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_right_finger_tip_link" reason="Never" />
     <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_right_inner_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_base_footprint" link2="campero_robotiq_85_right_knuckle_link" reason="Never" />
@@ -152,6 +151,7 @@
     <disable_collisions link1="campero_front_laser_structure_link" link2="campero_rear_laser_base_link" reason="Never" />
     <disable_collisions link1="campero_front_laser_structure_link" link2="campero_rear_laser_structure_link" reason="Never" />
     <disable_collisions link1="campero_front_laser_structure_link" link2="campero_ur10_base_link" reason="Never" />
+    <disable_collisions link1="campero_front_laser_structure_link" link2="campero_ur10_ee_link" reason="Never" />
     <disable_collisions link1="campero_front_laser_structure_link" link2="campero_ur10_shoulder_link" reason="Never" />
     <disable_collisions link1="campero_front_left_wheel_link" link2="campero_front_ptz_camera_base_link" reason="Never" />
     <disable_collisions link1="campero_front_left_wheel_link" link2="campero_front_right_wheel_link" reason="Never" />
@@ -180,29 +180,24 @@
     <disable_collisions link1="campero_imu_link" link2="campero_robotiq_85_left_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_robotiq_85_right_finger_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_robotiq_85_right_finger_tip_link" reason="Never" />
+    <disable_collisions link1="campero_imu_link" link2="campero_robotiq_85_right_inner_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_robotiq_85_right_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_sensor_fts_robotside" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_ur10_base_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_ur10_ee_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_ur10_shoulder_link" reason="Never" />
-    <disable_collisions link1="campero_imu_link" link2="campero_ur10_upper_arm_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_ur10_wrist_1_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_ur10_wrist_2_link" reason="Never" />
     <disable_collisions link1="campero_imu_link" link2="campero_ur10_wrist_3_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_base_link" link2="campero_rear_laser_structure_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_base_link" link2="campero_robotiq_85_left_finger_tip_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_base_link" link2="campero_robotiq_85_left_inner_knuckle_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_base_link" link2="campero_robotiq_85_right_finger_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_base_link" link2="campero_robotiq_85_right_finger_tip_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_base_link" link2="campero_robotiq_85_right_inner_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_base_link" link2="campero_robotiq_85_right_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_base_link" link2="campero_ur10_base_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_base_link" link2="campero_ur10_ee_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_base_link" link2="campero_ur10_shoulder_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_base_link" link2="campero_ur10_upper_arm_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_robotiq_85_left_finger_tip_link" reason="Never" />
-    <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_robotiq_85_right_finger_tip_link" reason="Never" />
+    <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_robotiq_85_left_knuckle_link" reason="Never" />
+    <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_robotiq_85_right_knuckle_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_ur10_base_link" reason="Never" />
+    <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_ur10_ee_link" reason="Never" />
     <disable_collisions link1="campero_rear_laser_structure_link" link2="campero_ur10_shoulder_link" reason="Never" />
     <disable_collisions link1="campero_robotiq_85_base_link" link2="campero_robotiq_85_left_finger_link" reason="Never" />
     <disable_collisions link1="campero_robotiq_85_base_link" link2="campero_robotiq_85_left_finger_tip_link" reason="Never" />

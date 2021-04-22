@@ -22,13 +22,11 @@
 	
 	<!-- Include UR-10 ARM -->
 	<xacro:include filename="$(find ur10_description)/urdf/ur10.urdf.xacro" />
-	<!--xacro:include filename="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/description/ur_description/urdf/ur10.urdf.xacro" /-->
 
 	<!-- Include force sensor description -->
-	<xacro:include filename="$(find campero_description)/urdf/robotiq_force_torque_sensor/robotiq_fts300.urdf.xacro"/>
+	<!--xacro:include filename="$(find campero_description)/urdf/robotiq_force_torque_sensor/robotiq_fts300.urdf.xacro"/-->
 	
 	<!-- Include gripper description -->
-    <xacro:include filename="$(find campero_description)/urdf/robotiq_c2/robotiq_85_gripper.urdf.xacro" />
 	<!--xacro:include filename="$(find campero_description)/urdf/robotiq_s/s-model_articulated_macro.xacro"/-->
 	
 	<!-- Wheel parameters -->
@@ -166,9 +164,9 @@
 		<!-- UR10 -> robotiq_fts300 -> 2/3f GRIPPER -->
 
 		<!-- ROBOTIQ SENSOR -->
-		<xacro:robotiq_fts300 prefix="$(arg prefix)sensor_" parent="$(arg prefix)ur10_ee_link">
+		<!--xacro:robotiq_fts300 prefix="$(arg prefix)sensor_" parent="$(arg prefix)ur10_ee_link">
 			<origin xyz="0.0 0 0" rpy="0 -1.57 ${pi}"/>
-		</xacro:robotiq_fts300>
+		</xacro:robotiq_fts300-->
 
 		<!-- ROBOTIQ 3f GRIPPER -->
 		<!--xacro:s-model_articulated prefix="$(arg prefix)">
@@ -179,11 +177,6 @@
 		  <parent link="$(arg prefix)sensor_fts_toolside" />
 		  <child link="$(arg prefix)palm" />
 		</joint-->
-
-		<!-- ROBOTIQ 85 GRIPPER -->
-		<xacro:robotiq_85_gripper prefix="$(arg prefix)" parent="$(arg prefix)sensor_fts_toolside">
-			<origin xyz="0 0.0 0" rpy="0 -1.57 0"/>
-		</xacro:robotiq_85_gripper>
 
 	
    </xacro:macro>

@@ -1,11 +1,11 @@
 moveit_setup_assistant_config:
   URDF:
     package: ""
-    relative_path: /home/nacho8/ROS_workspaces/campero_ur10_ws/src/description/ur10_campero.urdf.xacro
+    relative_path: /home/nacho8/ROS_workspaces/campero_ur10_ws/src/description/ur10_campero_pen.urdf.xacro
     xacro_args: "--inorder "
   SRDF:
     relative_path: config/campero.srdf
   CONFIG:
-    author_name: nacho
+    author_name: Ignacio Herrera
     author_email: nachohseara@gmail.com
-    generated_timestamp: 1619001357
+    generated_timestamp: 1619104369

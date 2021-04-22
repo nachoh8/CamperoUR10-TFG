@@ -147,7 +147,7 @@ manipulator:
     - SPARS
     - SPARStwo
 endeffector:
-  default_planner_config: ""
+  default_planner_config: None
   planner_configs:
     - SBL
     - EST
