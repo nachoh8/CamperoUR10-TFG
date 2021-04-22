@@ -22,6 +22,7 @@ source devel/setup.bash
 - Si después de haber realizado los pasos anteriores no se encuentran los paquetes al hacer roslaunch, hacer lo siguiente desde el directorio del workspace:
 ```bash
 rospack find campero_ur10_moveit
+rospack find campero_ur10_pen_moveit
 rospack find campero_ur10_msgs
 rospack find campero_ur10_server
 source devel/setup.bash
