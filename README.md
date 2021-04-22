@@ -35,7 +35,15 @@ source devel/setup.bash
         roslaunch campero_ur10_moveit demo.launch [scene_file:=scene.scene]
     ```
      por defecto scene_file:=ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
-
+    
+- **campero_ur10_pen_moveit**
+    - Descripción: Paquete necesario para la simulación y movimiento del robot con pinza y rotulador en MoveIt
+    - Uso:
+    ```bash
+        roslaunch campero_ur10_pen_moveit demo.launch [scene_file:=scene.scene]
+    ```
+     por defecto scene_file:=ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
+     
 - **campero_ur10_msgs**
     - Descripción: Paquete que contiene la definición de mensajes para operar el robot
     - Uso: ~
@@ -44,9 +52,11 @@ source devel/setup.bash
     - Descripción: Paquete que planifica y ejecuta las trayectorias del robot, hace de intermediario entre las aplicaciones a nivel de usuario y el robot en simulación/real
     - Uso:
     ```bash
-        roslaunch campero_ur10_server (draw.launch draw_config:=<file> | teleop.launch)
+        roslaunch campero_ur10_server (draw.launch draw_config:=<file> | teleop.launch -ori:=(0|1))
     ```
     En caso de draw.launch, por defecto draw_config:=../campero_ur10_server/config/ur10_draw.config
+    En caso de teleop.launch, por defecto ori:=0, indica que no se añaden restricciones de orientación al robot
+    
 - **campero_ur10_op**
     - Descripción: Paquete para teleoperar el robot mediante teclado, tiene dos modos(cartesiano y articular),envía los conmandos al nodo campero_ur10_server
     - Uso:
@@ -74,8 +84,9 @@ source devel/setup.bash
     ```bash
         python speed_monitor.py [-plt]
     ```
-    - Uso stop_robot: programa que permite cancelar la ejecución actual del robot
+    - Uso stop_robot: programa que permite detener la ejecución actual del robot de manera manual o si alguna articulación del robot sobrepasa la velocidad máxima
     ```bash
         python stop_robot.py
     ```
      Una vez lanzado el programa, pulsar Enter para detener al robot y z para salir del programa
+     Para que el robot se detenga al alcanzar la velocidad máxima es necesario ejecutar speed_monitor
