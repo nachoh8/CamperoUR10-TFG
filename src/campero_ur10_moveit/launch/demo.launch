@@ -54,8 +54,4 @@
     <arg name="moveit_warehouse_database_path" value="$(arg db_path)"/>
   </include>
 
-  <!--Load Scene from file-->
-  <arg name="scene_file" default="$(find campero_ur10_moveit)/config/ws_walls.scene"/> 
-  <node name = "moveit_publish_scene_from_text" pkg= "moveit_ros_planning" type = "moveit_publish_scene_from_text" args= "$(arg scene_file)"/>
-
 </launch>

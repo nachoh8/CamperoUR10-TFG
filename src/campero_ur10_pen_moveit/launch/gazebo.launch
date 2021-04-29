@@ -2,7 +2,7 @@
 <launch>
   <arg name="paused" default="false"/>
   <arg name="gazebo_gui" default="true"/>
-  <arg name="urdf_path" default="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/description/ur10_campero_pen.urdf.xacro"/>
+  <arg name="urdf_path" default="$(find campero_ur10_description)/robots/ur10_campero_pen.urdf.xacro"/>
 
   <!-- startup simulated world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
