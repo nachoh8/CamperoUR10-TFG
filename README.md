@@ -21,6 +21,7 @@ source devel/setup.bash
 ```
 - Si después de haber realizado los pasos anteriores no se encuentran los paquetes al hacer roslaunch, hacer lo siguiente desde el directorio del workspace:
 ```bash
+rospack find campero_ur10_description
 rospack find campero_ur10_moveit
 rospack find campero_ur10_pen_moveit
 rospack find campero_ur10_msgs
@@ -33,17 +34,15 @@ source devel/setup.bash
     - Descripción: Paquete necesario para la simulación y movimiento del robot con MoveIt
     - Uso:
     ```bash
-        roslaunch campero_ur10_moveit demo.launch [scene_file:=scene.scene]
+        roslaunch campero_ur10_moveit demo.launch
     ```
-     por defecto scene_file:=ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
     
 - **campero_ur10_pen_moveit**
     - Descripción: Paquete necesario para la simulación y movimiento del robot con pinza y rotulador en MoveIt
     - Uso:
     ```bash
-        roslaunch campero_ur10_pen_moveit demo.launch [scene_file:=scene.scene]
+        roslaunch campero_ur10_pen_moveit demo.launch
     ```
-     por defecto scene_file:=ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
      
 - **campero_ur10_msgs**
     - Descripción: Paquete que contiene la definición de mensajes para operar el robot
@@ -68,8 +67,11 @@ source devel/setup.bash
      
 - **description**
     - Descripción: Paquete que contiene archivos urdf/xacro que definen el robot
-    - Uso: ~
- 
+    - Uso: para cargar una escena en Rviz
+    ```bash
+        roslaunch campero_ur10_description load_scene.launch [scene_file:=<file>]
+    ```
+     por defecto scene_file:=campero_ur10_description/config/ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
  - **draw_board**
     - Descripción: Paquete que lanza una pizarra para dibujar, la imagen realizada se envía al nodo campero_ur10_server
     - Uso: dos tipos uno dibujando a mano(draw_board_cv) y otro mas preciso(draw_board_turtle)
@@ -85,6 +87,7 @@ source devel/setup.bash
     ```bash
         python speed_monitor.py [-plt]
     ```
+     si -plt activado muestra una gráfica con las velocidades de los joints al terminar una trayectoria
     - Uso stop_robot: programa que permite detener la ejecución actual del robot de manera manual o si alguna articulación del robot sobrepasa la velocidad máxima
     ```bash
         python stop_robot.py
