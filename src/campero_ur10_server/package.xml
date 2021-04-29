@@ -38,6 +38,7 @@
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2_eigen</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
+  <build_depend>campero_ur10_msgs</build_depend>
 
   <exec_depend>panda_moveit_config</exec_depend>
   <exec_depend>pluginlib</exec_depend>
@@ -55,6 +56,7 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>tf2_eigen</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>campero_ur10_msgs</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

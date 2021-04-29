@@ -42,12 +42,14 @@ catkin_package(
     interactive_markers
   DEPENDS
     EIGEN3
+    campero_ur10_msgs
 )
 
 include_directories(SYSTEM include ${Boost_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 add_library(c_ur10_def src/c_ur10_utils.cpp src/campero_ur10.cpp)
 target_link_libraries(c_ur10_def ${catkin_LIBRARIES})
+add_dependencies(c_ur10_def campero_ur10_msgs_generate_messages_cpp)
 
 #link_directories(${catkin_LIBRARY_DIRS})
 
