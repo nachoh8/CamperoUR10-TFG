@@ -142,7 +142,7 @@
 		
 
 		<!-- UR-10 ARM -->
-		<xacro:arg name="kinematics_config" default="$(find ur10_description)/config/ur10_default.yaml"/>
+		<xacro:arg name="kinematics_config" default="$(find campero_ur10_description)/config/ur10_calibration.yaml"/>
 		<xacro:ur10_robot prefix="$(arg prefix)ur10_" joint_limited="true"
 			shoulder_pan_lower_limit="${-PI}" shoulder_pan_upper_limit="${PI}"
     		shoulder_lift_lower_limit="${-PI}" shoulder_lift_upper_limit="${PI}"
@@ -153,6 +153,7 @@
 			kinematics_file="${load_yaml('$(arg kinematics_config)')}">
 		</xacro:ur10_robot>
 		
+		<!--Unimos el brazo con la base del campero-->
 		<joint name="$(arg prefix)ur10_arm_base_joint" type="fixed">
 		  <origin xyz="0.215 0 0.5885" rpy="0 0 3.14"/>
 		  <parent link="$(arg prefix)base_link" />

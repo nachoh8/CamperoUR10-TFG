@@ -6,5 +6,6 @@
   <param name="moveit_controller_manager" value="$(arg moveit_controller_manager)"/>
 
   <!-- loads ros_controllers to the param server -->
-  <rosparam file="$(find campero_ur10_pen_moveit)/config/ros_controllers.yaml"/>
+  <!-- Por defecto estaba este rosparam file="$(find campero_ur10_pen_moveit)/config/ros_controllers.yaml"/-->
+  <rosparam file="$(find campero_ur10_pen_moveit)/config/controllers.yaml"/>
 </launch>
