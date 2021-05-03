@@ -1,3 +1,4 @@
+#fichero de calibracion por defecto del paquete oficial del UR10
 kinematics:
   shoulder:
     x: 0

@@ -9,7 +9,7 @@
     <arg name="controller_config_file" default="$(find campero_ur10_description)/config/ur10_controllers.yaml" doc="Config file used for defining the ROS-Control controllers."/>
 
     <arg name="kinematics_config" default="$(find campero_ur10_description)/config/ur10_calibration.yaml" doc="Kinematics config file used for calibration correction. This will be used to verify the robot's calibration is matching the robot_description."/>
-    <arg name="robot_description_file" default="$(find campero_ur10_description)/robots/ur10_campero_pen.urdf.xacro" doc="Robot description urdf xacro."/>
+    <arg name="robot_description_file" default="$(find campero_ur10_description)/robots/campero_ur10.urdf.xacro" doc="Robot description urdf xacro."/>
 
     <!-- Los siguientes parametros estan por defecto como en el ur10_bringup.launch -->
     <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
@@ -36,7 +36,7 @@
 
     <!--Cargar modelo del robot-->
     <param name="robot_description"
-        command="$(find xacro)/xacro --inorder '$(find campero_ur10_description)/robots/ur10_campero_pen.urdf.xacro' transmission_hw_interface:=$(arg transmission_hw_interface) kinematics_config:=$(arg kinematics_config)"/>
+        command="$(find xacro)/xacro --inorder '$(arg robot_description_file)' transmission_hw_interface:=$(arg transmission_hw_interface) kinematics_config:=$(arg kinematics_config)"/>
 
     <!-- Convert joint states to /tf tranforms -->
     <!--En el campero llaman al nodo ur_state_publisher-->

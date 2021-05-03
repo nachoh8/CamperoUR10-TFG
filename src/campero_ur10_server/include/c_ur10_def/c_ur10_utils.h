@@ -8,6 +8,8 @@
 extern const std::string C_UR10_PLANNING_GROUP; // = "manipulator";
 extern const std::string C_UR10_PLANNING_GROUP_EE; // = "endeffector";
 
+//extern const std::string C_UR10_PREFIX;
+
 extern const std::string C_UR10_BASE_LINK; // = "campero_base_footprint";//"campero_ur10_base_link";
 extern const std::string C_UR10_SHOULDER_LINK; // = "campero_ur10_shoulder_link";
 extern const std::string C_UR10_UPPER_ARM_LINK; // = "campero_ur10_upper_arm_link";

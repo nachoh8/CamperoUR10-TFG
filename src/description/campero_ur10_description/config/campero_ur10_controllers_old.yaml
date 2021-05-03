@@ -1,3 +1,6 @@
+# Archivo controllers que venia en el campero
+# Es igual que el archivo ur10_controllers.yaml oficial que venia en el driver antiguo
+
 # Settings for ros_control hardware interface
 hardware_interface:
    joints:
