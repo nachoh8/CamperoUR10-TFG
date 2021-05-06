@@ -9,12 +9,6 @@ generic_hw_control_loop:
 # Settings for ros_control hardware interface
 hardware_interface:
   joints:
-    - campero_back_left_wheel_joint
-    - campero_back_right_wheel_joint
-    - campero_front_left_wheel_joint
-    - campero_front_ptz_camera_pan_joint
-    - campero_front_ptz_camera_tilt_joint
-    - campero_front_right_wheel_joint
     - campero_ur10_shoulder_pan_joint
     - campero_ur10_shoulder_lift_joint
     - campero_ur10_elbow_joint

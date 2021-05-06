@@ -67,9 +67,13 @@ pub = None # /joint_speed publisher
 pg = None # if -plt -> plot speed
 
 def process(data):
+    """
+    data: JointState
+    """
     global last_pos, pub, pg
 
     t = data.header.stamp.to_sec()
+    # names = data.names
     pos = data.position[NUM_JOINTS::] # descartamos posiciones de joints no validos
     
     v = [0.0 for _ in range(NUM_JOINTS)]

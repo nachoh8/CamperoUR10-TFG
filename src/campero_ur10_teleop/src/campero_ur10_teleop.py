@@ -2,7 +2,7 @@ import argparse
 import rospy
 
 from campero_ur10_msgs.msg import MoveOp
-import keyboard_op as k_op
+import keyboard_teleop as k_op
 
 TOPIC_NAME="campero_ur10_move"
 NODE_NAME="campero_ur10_operator"
@@ -51,8 +51,6 @@ def getID(ch):
             return MoveOp.RZ_AXIS
     
     return -1
-
-# TODO: combinar teclas para realizar trayectorias mas complejas
 
 def buildMsg(ch):
     """
@@ -113,6 +111,7 @@ def main():
     args = parser.parse_args()
 
     max_step = args.MaxStep
+    increase_step = args.Step
     time_sleep = args.time
     
     pub = rospy.Publisher(TOPIC_NAME, MoveOp, queue_size=1)
@@ -144,7 +143,7 @@ def main():
             step = v if v < max_step else max_step
             rospy.loginfo("Step: " + str(step))
 
-        elif ch == "-": # increase step
+        elif ch == "-": # decrease step
             v = step - increase_step
             step = v if v > increase_step else increase_step
             rospy.loginfo("Step: " + str(step))
@@ -161,7 +160,8 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CamperoUR10 Operator')
-    parser.add_argument("-ms", "--MaxStep", type = float, help = 'max step of each movement', default = max_step)
+    parser.add_argument("-Ms", "--MaxStep", type = float, help = 'max step of each movement', default = max_step)
+    parser.add_argument("-s", "--Step", type = float, help = 'step of each movement', default = increase_step)
     parser.add_argument("-t", "--time", type = float, help = 'time to sleep in seconds', default = time_sleep)
 
     try:

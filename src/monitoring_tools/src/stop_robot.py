@@ -13,6 +13,8 @@ TIME_SLEEP = 0.1
 
 MAX_SPEED = 0.5
 
+SPEED_MONITORING = False
+
 move_group = None
 
 def stop():
@@ -41,7 +43,9 @@ def main():
 
     move_group = moveit_commander.MoveGroupCommander(C_UR10_PLANNING_GROUP)
 
-    rospy.Subscriber(TOPIC_SUB, JointSpeed, process, queue_size=1)
+    if SPEED_MONITORING:
+        rospy.loginfo("---Monitoring Speed: Active---")
+        rospy.Subscriber(TOPIC_SUB, JointSpeed, process, queue_size=1)
 
     rospy.loginfo("---Stop Program Ready---")
     
@@ -60,6 +64,15 @@ def main():
 
 
 if __name__ == '__main__':
+    """
+    Uso:
+        python stop_robot.py [-v [<max_speed>]]
+        -v: opcional, activa detencion al alcanzar max_speed
+        <max_speed>: opcional, por defecto es 0.5 rad/s
+    """
+    if len(sys.argv) == 2 and sys.argv[1] == "-v":
+        SPEED_MONITORING = True
+    
     try:
         main()
     except rospy.ROSInterruptException:
