@@ -22,32 +22,31 @@ source devel/setup.bash
 - Si después de haber realizado los pasos anteriores no se encuentran los paquetes al hacer roslaunch, hacer lo siguiente desde el directorio del workspace:
 ```bash
 rospack find campero_ur10_description
-rospack find campero_ur10_moveit
+rospack find ur10_moveit_official
 rospack find campero_ur10_pen_moveit
 rospack find campero_ur10_msgs
 rospack find campero_ur10_server
 source devel/setup.bash
 ```
 
-## Paquetes
-- **campero_ur10_moveit**
-    - Descripción: Paquete necesario para la simulación y movimiento del robot con MoveIt
-    - Uso:
-    ```bash
-        roslaunch campero_ur10_moveit demo.launch
-    ```
-    
+## Paquetes    
 - **campero_ur10_pen_moveit**
-    - Descripción: Paquete necesario para la simulación y movimiento del robot con pinza y rotulador en MoveIt
+    - Descripción: Paquete necesario para la simulación y movimiento del robot con pinza y rotulador en MoveIt, no funciona con el robot real
     - Uso:
     ```bash
         roslaunch campero_ur10_pen_moveit demo.launch
     ```
-- **campero_ur10_moveit_config**
-    - Descripción: Paquete necesario para la simulación y movimiento del robot con pinza en MoveIt, no incluye el prefijo campero_ur10_
+- **ur10_moveit_official**
+    - Descripción: Paquete necesario para la simulación y movimiento real del robot con pinza en MoveIt, no incluye el prefijo campero_ur10_
     - Uso:
+     - simulacion:
     ```bash
-        roslaunch campero_ur10_moveit_config demo.launch
+        roslaunch ur10_moveit_official demo.launch
+    ```
+     - real: requiere haber lanzado previamente el driver(campero_ur10_description/campero_ur10_bringup.launch)
+    ```bash
+        roslaunch ur10_moveit_official ur10_moveit_planning_execution.launch
+        roslaunch ur10_moveit_official moveit_rviz.launch config:=true
     ```
      
 - **campero_ur10_msgs**
@@ -79,7 +78,7 @@ source devel/setup.bash
         roslaunch campero_ur10_description load_scene.launch [scene_file:=<file>]
     ```
      por defecto scene_file:=campero_ur10_description/config/ws_walls.scene, hay que indicarle la ruta completa al archivo sino falla
-     - Uso: lanzar robot ur10 real
+     - Uso: lanzar robot ur10 real, requiere lanzar previamente el programa urcap en el ordenador del ur10
     ```bash
         roslaunch campero_ur10_description campero_ur10_bringup.launch [robot_ip:=<ip>] [controller_config_file:=<file_controllers.yaml>] [kinematics_config:=<file_calibration.yaml>] [robot_description_file:=<robot_description.urdf.xacro>]
     ```
