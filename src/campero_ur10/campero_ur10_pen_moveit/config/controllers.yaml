@@ -1,0 +1,11 @@
+controller_list:
+  - name: ""
+    action_ns: scaled_pos_traj_controller/follow_joint_trajectory
+    type: FollowJointTrajectory
+    joints:
+      - campero_ur10_shoulder_pan_joint
+      - campero_ur10_shoulder_lift_joint
+      - campero_ur10_elbow_joint
+      - campero_ur10_wrist_1_joint
+      - campero_ur10_wrist_2_joint
+      - campero_ur10_wrist_3_joint
