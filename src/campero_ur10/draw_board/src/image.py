@@ -1,12 +1,15 @@
 from campero_ur10_msgs.msg import ImgPoint, ImgTrace, ImageDraw
 
 SIZE_DEFAULT = 512
+W_DEFAULT = SIZE_DEFAULT
+H_DEFAULT = SIZE_DEFAULT
 XOFFSET_DEFAULT = 0
 YOFFSET_DEFAULT = 0
 
 class MyImageDraw:
-    def __init__(self, size=SIZE_DEFAULT, xoffset = XOFFSET_DEFAULT, yoffset = YOFFSET_DEFAULT):
-        self.size = SIZE_DEFAULT if size < 0 else size
+    def __init__(self, w = W_DEFAULT, h = H_DEFAULT, xoffset = XOFFSET_DEFAULT, yoffset = YOFFSET_DEFAULT):
+        self.W = W_DEFAULT if w < 0 else w
+        self.H = H_DEFAULT if h < 0 else h
         self.xoffset = xoffset
         self.yoffset = yoffset
         self.traces = []
@@ -31,7 +34,7 @@ class MyImageDraw:
         i = 0
         for pt in trace:
             x,y = pt
-            if x >= 0 and x < self.size and y >= 0 and y < self.size:
+            if x >= 0 and x < self.W and y >= 0 and y < self.H:
                 imgPoint = ImgPoint()
                 imgPoint.x = x
                 imgPoint.y = y
@@ -52,6 +55,7 @@ class MyImageDraw:
                 img.traces.insert(i, _trace)
                 i += 1
         
-        img.size = self.size
+        img.W = self.W
+        img.H = self.H
 
         return img

@@ -3,42 +3,37 @@ import argparse
 import numpy as np
 from rospy import ROSInterruptException
 
-import sys
-from os import path
-
+#import sys
+#from os import path
 #sys.path.insert(1, path.dirname(path.dirname(__file__))+"/lib") # add path to ../lib
 
-from image import MyImageDraw, SIZE_DEFAULT
+from image import MyImageDraw, W_DEFAULT, H_DEFAULT
 from node import DrawBoardNode
 
 WINDOW_NAME = "BoardCV"
 
-#MAX_UNDO = 3
-
 K_ESC = 27 # escape
 K_CLEAR = 99 # c
 K_SEND = 115 # s
-K_UNDO = 122 # z
-
 
 class BoardCV:
-    def __init__(self, size=SIZE_DEFAULT):
-        self.size = SIZE_DEFAULT if size < 0 else size
+    def __init__(self, w = W_DEFAULT, h = H_DEFAULT):
+        self.W = W_DEFAULT if w < 0 else w
+        self.H = H_DEFAULT if h < 0 else h
 
         self.node = DrawBoardNode()
-        self.image = MyImageDraw(self.size)
+        self.image = MyImageDraw(self.W, self.H)
 
         self.drawing = False # true if mouse is pressed
         self.pt1_x , self.pt1_y = None , None
-        self.screen = np.zeros((self.size, self.size, 3), np.uint8)
-        #self.last_screen = self.screen.copy()
+        self.screen = np.zeros((self.H, self.W, 3), np.uint8)
 
         cv2.namedWindow(WINDOW_NAME)
         self.clearBoard()
         cv2.setMouseCallback(WINDOW_NAME, self.line_drawing)
 
     def clearBoard(self):
-        self.screen = np.zeros((self.size, self.size, 3), np.uint8)
+        self.screen = np.zeros((self.H, self.W, 3), np.uint8)
         self.image.clear()
 
     # mouse callback function
@@ -67,30 +62,29 @@ class BoardCV:
         cv2.destroyAllWindows()
         self.node.close()
     
-    def undo(self):
-        pass
-    
+    def send(self):
+        self.node.publishImage(self.image.getImgDraw())
+
     def main(self):
         while not self.node.isClosed():
             cv2.imshow(WINDOW_NAME, self.screen)
 
             key = cv2.waitKey(1)
             if key == K_ESC:
-                self.node.publishImage(self.image.getImgDraw())
+                self.close()
             elif key == K_CLEAR:
                 self.clearBoard()
             elif key == K_SEND:
-                self.node.publishImage(self.image.getImgDraw())
-            elif key == K_UNDO:
-                self.undo()
+                self.send()        
             
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Draw on board')
-    parser.add_argument("-s", "--size", type = int, help = 'size of screen NxN', default = SIZE_DEFAULT)
+    parser.add_argument("-W", "--width", type = int, help = 'width of screen', default = W_DEFAULT)
+    parser.add_argument("-H", "--height", type = int, help = 'height of screen', default = H_DEFAULT)
 
     args = parser.parse_args()
     try:
-        board = BoardCV(args.size)
+        board = BoardCV(args.width, args.height)
         board.main()
     except ROSInterruptException:
         pass

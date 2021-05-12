@@ -7,21 +7,22 @@ from os import path
 
 sys.path.insert(1, path.dirname(path.dirname(__file__))+"/lib") # add path to ../lib
 
-from image import MyImageDraw, SIZE_DEFAULT
+from image import MyImageDraw, W_DEFAULT, H_DEFAULT
 from node import DrawBoardNode
 
 
 STEP_DISTANCE = 1
 
 class BoardTurtle:
-    def __init__(self, size = SIZE_DEFAULT):
-        self.size = SIZE_DEFAULT if size < 0 else size
+    def __init__(self, w = W_DEFAULT, h = H_DEFAULT):
+        self.W = W_DEFAULT if w < 0 else w
+        self.H = H_DEFAULT if h < 0 else h
 
         self.node = DrawBoardNode()
-        self.image = MyImageDraw(self.size, self.size/2, -self.size/2)
+        self.image = MyImageDraw(self.W, self.H, self.W/2, -self.H/2)
 
         self.screen = turtle.Screen()
-        self.screen.setup(self.size, self.size, 0, 0)
+        self.screen.setup(self.W, self.H, 0, 0)
         self.t = turtle.Turtle()
         self.t.speed(-1)
         self.t.penup()
@@ -93,11 +94,12 @@ class BoardTurtle:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Draw on board')
-    parser.add_argument("-s", "--size", type = int, help = 'size of screen NxN', default = SIZE_DEFAULT)
+    parser.add_argument("-W", "--width", type = int, help = 'width of screen', default = W_DEFAULT)
+    parser.add_argument("-H", "--height", type = int, help = 'height of screen', default = H_DEFAULT)
 
     args = parser.parse_args()
     try:
-        board = BoardTurtle()
+        board = BoardTurtle(args.width, args.height)
         turtle.mainloop()
     except ROSInterruptException:
         pass

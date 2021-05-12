@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 
 #include <moveit/move_group_interface/move_group_interface.h>
+
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 #include <campero_ur10_msgs/MoveOp.h>
@@ -13,6 +14,8 @@
 #include <campero_ur10_msgs/ImgTrace.h>
 
 #include "c_ur10_utils.h"
+
+#define BOARD_Z_DEFAULT 0.79f
 
 enum class C_UR10_Mode {DRAW_IMAGE, TELEOP};
 
@@ -33,7 +36,7 @@ private:
     bool add_ori;
 
     // Draw Board parameters
-    double z_pen_down = -1.0, z_pen_up = -1.0, correct_x = -1.0, correct_y = -1.0, board_min_x = -1.0, board_min_y = -1.0, board_size = -1.0;
+    double z_pen_down = -1.0, z_pen_up = -1.0, correct_x = -1.0, correct_y = -1.0, board_min_x = -1.0, board_min_y = -1.0, board_z = BOARD_Z_DEFAULT, w_board = -1.0, h_board = -1.0;
 
     bool draw_okey = false;
 
@@ -55,6 +58,8 @@ private:
     void init(C_UR10_Mode _mode);
 
     void loadDrawConfig(std::string& file);
+
+    void deleteMarkers(bool keep_visual_refs = true);
 
 public:
     CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori);
@@ -81,7 +86,7 @@ public:
 
     void goHome();
 
-    void processTrace(const campero_ur10_msgs::ImgTrace trace, const double div, std::vector<geometry_msgs::Pose>& waypoints);
+    void processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints);
 
     void callbackDraw(const campero_ur10_msgs::ImageDraw image);
 
@@ -89,8 +94,6 @@ public:
 
     moveit::planning_interface::MoveGroupInterface& getMoveGroup();
 
-    //void drawCircle(const double x, const double y, const double r);
-
-    //void drawSin(const double x, const double y, const double maxX, const double maxY);
+    void showBoard();
 };
 

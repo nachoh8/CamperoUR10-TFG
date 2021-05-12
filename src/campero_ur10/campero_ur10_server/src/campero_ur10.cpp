@@ -12,6 +12,8 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+namespace rvt = rviz_visual_tools;
+
 //#define C_UR10_INFO_NAMED "CamperoUR10"  // roslog name
 
 #define NODE_NAME "campero_ur10"
@@ -22,9 +24,11 @@
 #define QUEUE_SIZE_TELEOP 1 // teleop topic queue size
 #define QUEUE_SIZE_IMG_DRAW 1 // img_draw topic queue size
 
-#define FIELD_SIZE_BOARD "#SIZE_BOARD"
+#define FIELD_W_BOARD "#W_BOARD"
+#define FIELD_H_BOARD "#H_BOARD"
 #define FIELD_MIN_BOARD_X "#MIN_BOARD_X"
 #define FIELD_MIN_BOARD_Y "#MIN_BOARD_Y"
+#define FIELD_BOARD_Z "#BOARD_Z"
 #define FIELD_Z_PEN_DOWN "#Z_PEN_DOWN"
 #define FIELD_Z_PEN_UP "#Z_PEN_UP"
 #define FIELD_CORRECT_X "#CORRECT_X"
@@ -77,15 +81,21 @@ void CamperoUR10::loadDrawConfig(std::string& file) {
     while (!fin.eof()) {
         getline(fin, line);
         
-        if (line.compare(FIELD_SIZE_BOARD) == 0) {
-            fin >> board_size;
+        if (line.compare(FIELD_W_BOARD) == 0) {
+            fin >> w_board;
+            
+        } else if (line.compare(FIELD_H_BOARD) == 0) {
+            fin >> h_board;
             
         } else if (line.compare(FIELD_MIN_BOARD_X) == 0) {
             fin >> board_min_x;
             
         } else if (line.compare(FIELD_MIN_BOARD_Y) == 0) {
             fin >> board_min_y;
-            
+
+        } else if (line.compare(FIELD_BOARD_Z) == 0) {
+            fin >> board_z;
+
         } else if (line.compare(FIELD_Z_PEN_DOWN) == 0) {
             fin >> z_pen_down;
 
@@ -99,12 +109,18 @@ void CamperoUR10::loadDrawConfig(std::string& file) {
             fin >> correct_y;
             
         }
-        
     }
 
     fin.close();
 
-    draw_okey = !(z_pen_down == -1 || z_pen_up == -1 || correct_y == -1 || correct_x == -1 || board_size == -1 || board_min_x == -1 || board_min_y == -1);
+    draw_okey = !(z_pen_down == -1 || z_pen_up == -1 || correct_y == -1 || correct_x == -1 || w_board == -1 || h_board == -1 || board_min_x == -1 || board_min_y == -1);
+}
+
+void CamperoUR10::deleteMarkers(bool keep_visual_refs) {
+    visual_tools.deleteAllMarkers();
+    if (keep_visual_refs) {
+        if (mode == C_UR10_Mode::DRAW_IMAGE) showBoard();
+    }
 }
 
 void CamperoUR10::prompt(std::string msg) {
@@ -112,7 +128,7 @@ void CamperoUR10::prompt(std::string msg) {
 }
 
 void CamperoUR10::showPlan() {
-    visual_tools.deleteAllMarkers();
+    deleteMarkers();
     
     /*for (std::size_t i = 0; i < move_group.getPoseTargets().size(); ++i) {
         visual_tools.publishAxisLabeled(move_group.getPoseTargets()[i].pose, "pt" + std::to_string(i), rviz_visual_tools::SMALL);
@@ -147,7 +163,7 @@ double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) 
     ROS_INFO("Cartesian plan path (%.2f%% acheived)", fraction * 100.0);
 
     // Show plan
-    visual_tools.deleteAllMarkers();
+    deleteMarkers();
     visual_tools.publishPath(waypoints, rviz_visual_tools::LIME_GREEN, rviz_visual_tools::SMALL);
     /*for (std::size_t i = 0; i < waypoints.size(); ++i)
         visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rviz_visual_tools::SMALL);
@@ -266,21 +282,21 @@ moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
     return move_group;
 }
 
-void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double div, std::vector<geometry_msgs::Pose>& waypoints) {
+void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints) {
     ROS_INFO("Trace: %d points", trace.points.size());
 
     geometry_msgs::Pose target = move_group.getCurrentPose().pose;
     
     // go to first point with pen up
-    target.position.y = board_min_y + trace.points[0].x * div + correct_y;
-    target.position.x = board_min_x + trace.points[0].y * div + correct_x;
+    target.position.y = board_min_y + trace.points[0].x * w_div + correct_y;
+    target.position.x = board_min_x + trace.points[0].y * h_div + correct_x;
     waypoints.push_back(target);
 
     // add all points
     target.position.z = z_pen_down;
     for (int i = 0; i < trace.points.size(); i++) {
-        target.position.y = board_min_y + trace.points[i].x * div + correct_y;
-        target.position.x = board_min_x + trace.points[i].y * div + correct_x;
+        target.position.y = board_min_y + trace.points[i].x * w_div + correct_y;
+        target.position.x = board_min_x + trace.points[i].y * h_div + correct_x;
         waypoints.push_back(target);
     }
 
@@ -292,12 +308,13 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
 void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     ROS_INFO("Image received: %d traces", image.traces.size());
     
-    const double div = board_size / image.size;
+    const double w_div = w_board / image.W;
+    const double h_div = h_board / image.H;
 
     std::vector<geometry_msgs::Pose> waypoints;
 
     for (int i = 0; i < image.traces.size(); i++) {
-        processTrace(image.traces[i], div, waypoints);
+        processTrace(image.traces[i], w_div, h_div, waypoints);
     }
     
     // plan & execute
@@ -394,7 +411,32 @@ void CamperoUR10::goHome() {
     move_group.clearPathConstraints();
     move_group.setNamedTarget(C_UR10_POSE_UP);
     plan_execute();
-    visual_tools.deleteAllMarkers();
+    deleteMarkers(false);
+}
+
+void CamperoUR10::showBoard() {
+    geometry_msgs::Polygon pl;
+    geometry_msgs::Point32 pt;
+
+    pt.x = board_min_x;
+    pt.y = board_min_y;
+    pt.z = board_z;
+    pl.points.push_back(pt);
+    
+    pt.x = board_min_x;
+    pt.y = board_min_y + w_board;
+    pl.points.push_back(pt);
+
+    pt.x = board_min_x + h_board;
+    pt.y = board_min_y + w_board;
+    pl.points.push_back(pt);
+
+    pt.x = board_min_x + h_board;
+    pt.y = board_min_y;
+    pl.points.push_back(pt);
+    
+    visual_tools.publishPolygon(pl);
+
     visual_tools.trigger();
 }
 
@@ -410,7 +452,7 @@ void CamperoUR10::main() {
             ROS_INFO(s.c_str());
             s = "Z_PEN_UP: " + std::to_string(z_pen_up);
             ROS_INFO(s.c_str());
-            s = "BOARD_SIZE: " + std::to_string(board_size);
+            s = "BOARD_SIZE: " + std::to_string(w_board) + "x" + std::to_string(h_board);
             ROS_INFO(s.c_str());
             s = "BOARD_X: " + std::to_string(board_min_x);
             ROS_INFO(s.c_str());
@@ -421,8 +463,11 @@ void CamperoUR10::main() {
                 ROS_INFO("Incorrect configuration");
                 return;
             }
+            
             // go ready draw position
             if (!goReadyDraw()) return;
+
+            showBoard();
 
             sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
         }
@@ -453,43 +498,3 @@ void CamperoUR10::main() {
     }
     
 }
-
-/*void CamperoUR10::drawCircle(const double x, const double y, const double r) {
-    std::cout << "Drawing circle -> center (" << x << ", " << y  << ")"
-                        << " r: " << r << std::endl;
-    
-    std::vector<geometry_msgs::Pose> waypoints;
-    geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
-
-    for (double th = 0; th < 2*M_PI; th += 0.1) {
-        target_pose.position.x = x + r * cos(th);
-        target_pose.position.y = y + r * sin(th);
-        waypoints.push_back(target_pose);
-    }
-
-    plan_exec_Carthesian(waypoints);
-}
-
-void CamperoUR10::drawSin(const double x, const double y, const double maxX, const double maxY) {
-    const double plane_len = 4*M_PI;
-    const double step = 0.1;
-    const double real_len = maxX - x < 0 ? (maxX - x)*-1 : maxX - x;
-    const double real_step = step*(real_len/plane_len);
-
-    std::vector<geometry_msgs::Pose> waypoints;
-    geometry_msgs::Pose target_pose = move_group.getCurrentPose().pose;
-    target_pose.position.x = x;
-    target_pose.position.y = y;
-    
-    double xx = x;
-
-    for (double th = -2*M_PI; th < 2*M_PI; th += step) {
-        xx += real_step;
-        target_pose.position.y = xx;
-        target_pose.position.x = y + sin(th)*maxY;
-        waypoints.push_back(target_pose);
-    }
-
-    plan_exec_Carthesian(waypoints);
-}*/
-

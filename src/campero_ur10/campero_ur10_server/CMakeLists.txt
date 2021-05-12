@@ -55,6 +55,7 @@ add_dependencies(c_ur10_def campero_ur10_msgs_generate_messages_cpp)
 
 add_executable(campero_ur10_server src/campero_ur10_server.cpp src/c_ur10_utils.cpp src/campero_ur10.cpp)
 target_link_libraries(campero_ur10_server c_ur10_def ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
 install(TARGETS campero_ur10_server DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 
