@@ -12,6 +12,7 @@ from node import DrawBoardNode
 
 WINDOW_NAME = "BoardCV"
 
+# 32 space, 9 tab
 K_ESC = 27 # escape
 K_CLEAR = 99 # c
 K_SEND = 115 # s

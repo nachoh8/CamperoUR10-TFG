@@ -11,8 +11,6 @@ Panels:
         - /MotionPlanning1
         - /MotionPlanning1/Scene Geometry1
         - /MotionPlanning1/Scene Robot1
-        - /MotionPlanning1/Scene Robot1/Links1
-        - /MotionPlanning1/Scene Robot1/Links1/campero_base_footprint1
         - /MotionPlanning1/Planning Request1
         - /MotionPlanning1/Planning Metrics1
         - /MotionPlanning1/Planned Path1
@@ -55,7 +53,8 @@ Visualization Manager:
       Marker Topic: /rviz_visual_tools
       Name: MarkerArray
       Namespaces:
-        {}
+        Cylinder: true
+        Sphere: true
       Queue Size: 100
       Value: true
     - Class: moveit_rviz_plugin/Trajectory
@@ -77,6 +76,52 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        base_pen_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_bottom_screw_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_left_ir_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_left_ir_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_right_ir_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_right_ir_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         campero_back_left_wheel_link:
           Alpha: 1
           Show Axes: false
@@ -93,7 +138,7 @@ Visualization Manager:
           Show Trail: false
         campero_base_footprint:
           Alpha: 1
-          Show Axes: true
+          Show Axes: false
           Show Trail: false
           Value: true
         campero_base_link:
@@ -304,6 +349,52 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          base_pen_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          camera_bottom_screw_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_color_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_color_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_depth_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_depth_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left_ir_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left_ir_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          camera_right_ir_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_right_ir_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           campero_back_left_wheel_link:
             Alpha: 1
             Show Axes: false
@@ -320,7 +411,7 @@ Visualization Manager:
             Show Trail: false
           campero_base_footprint:
             Alpha: 1
-            Show Axes: true
+            Show Axes: false
             Show Trail: false
             Value: true
           campero_base_link:
@@ -535,6 +626,52 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          base_pen_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          camera_bottom_screw_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_color_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_color_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_depth_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_depth_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left_ir_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left_ir_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          camera_right_ir_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_right_ir_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           campero_back_left_wheel_link:
             Alpha: 1
             Show Axes: false
@@ -551,7 +688,7 @@ Visualization Manager:
             Show Trail: false
           campero_base_footprint:
             Alpha: 1
-            Show Axes: true
+            Show Axes: false
             Show Trail: false
             Value: true
           campero_base_link:
@@ -743,7 +880,7 @@ Visualization Manager:
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
         Planning Group: manipulator
-        Query Goal State: true
+        Query Goal State: false
         Query Start State: false
         Show Workspace: false
         Start State Alpha: 0.25
@@ -774,6 +911,52 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          base_pen_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          camera_bottom_screw_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_color_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_color_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_depth_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_depth_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left_ir_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left_ir_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          camera_right_ir_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_right_ir_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           campero_back_left_wheel_link:
             Alpha: 1
             Show Axes: false
@@ -790,7 +973,7 @@ Visualization Manager:
             Show Trail: false
           campero_base_footprint:
             Alpha: 1
-            Show Axes: true
+            Show Axes: false
             Show Trail: false
             Value: true
           campero_base_link:
@@ -996,10 +1179,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -0.0397948697
+      Pitch: 1.56979632
       Target Frame: panda_link0
       Value: XYOrbit (rviz)
-      Yaw: 4.62499475
+      Yaw: 6.1550045
     Saved: ~
 Window Geometry:
   Displays:

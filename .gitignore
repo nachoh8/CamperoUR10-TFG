@@ -4,3 +4,4 @@ devel/
 *.pyc
 src/fmauch_universal_robot/
 src/Universal_Robots_ROS_Driver/
+src/realsense/
