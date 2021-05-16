@@ -177,31 +177,31 @@
 
 		<!-- Real sense camara D435 -->
 		<xacro:sensor_d435 parent="ee_link">
-			<origin xyz="0.05 0 -0.04" rpy="${PI} 0 0"/>
+			<origin xyz="0.055 0 -0.045" rpy="${PI} 0 0"/>
 		</xacro:sensor_d435>
 
 		<!-- Soporte rotulador -->
 		<joint name="base_pen_joint" type="fixed">
 			<parent link ="ee_link" />
 			<child link = "base_pen_link" />
-			<origin xyz="0.08 0.0 0.1" rpy="0.0 0.0 0.0" />
+			<origin xyz="0.08 0.0 0.09" rpy="0.0 0.0 0.0" />
 		</joint>
 
 		<link name = "base_pen_link" type="fixed">
 			<visual> <!-- box1 -->
 				<origin xyz=" 0 0 0" rpy="0 0 0" />
 				<geometry>
-					<box size="0.01 0.04 0.13"/>
+					<box size="0.01 0.045 0.115"/>
 				</geometry>
 				<material name="grey">
 					<color rgba="0.5 0.5 0.5 1"/>
 				</material>
 			</visual>
 			<visual> <!-- box2 -->
-				<!--xyz = "box2.size.x/2-box1.size.x/2 box2.size.y/2-box1.size.y/2 box1.size.y/2 - box2.size.z/2"-->
-				<origin xyz=" 0.015 0.02 0.045" rpy="0 0 0" />
+				<!--xyz = "box2.size.x/2-box1.size.x/2 box2.size.y/2+box1.size.y/2 box1.size.z/2 - box2.size.z/2"-->
+				<origin xyz=" 0.011 0.0475 0.0375" rpy="0 0 0" />
 				<geometry>
-					<box size="0.04 0.08 0.04"/>
+					<box size="0.032 0.05 0.04"/>
 				</geometry>
 				<material name="black">
 					<color rgba="0 0 0 1"/>
@@ -209,9 +209,9 @@
 			</visual>
 			<visual> <!-- cylinder -->
 				<!--xyz = "? box2.size.y/2-box1.size.y/2 box1.size.y/2 - box2.size.z/2"-->
-				<origin xyz=" 0.04 0.03 0.045" rpy="0 ${PI*1/2} 0" />
+				<origin xyz=" 0.04 0.0475 0.0375" rpy="0 ${PI*1/2} 0" />
 				<geometry>
-					<cylinder length="0.24" radius="0.01"/>
+					<cylinder length="0.25" radius="0.0075"/>
 				</geometry>
 				<material name="yellow">
                 	<color rgba="1 0.4 0 1"/>

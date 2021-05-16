@@ -11,7 +11,7 @@ from sensor_msgs.msg import JointState
 import matplotlib.pyplot as plt
 
 from campero_ur10_msgs.msg import JointSpeed
-
+#para real usar /joint_states/velocity
 class JointPosition:
     def __init__(self, time, positions, v_is_zero):
         self.time = time

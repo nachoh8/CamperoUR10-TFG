@@ -26,8 +26,8 @@ namespace rvt = rviz_visual_tools;
 
 #define FIELD_W_BOARD "#W_BOARD"
 #define FIELD_H_BOARD "#H_BOARD"
-#define FIELD_MIN_BOARD_X "#MIN_BOARD_X"
-#define FIELD_MIN_BOARD_Y "#MIN_BOARD_Y"
+#define FIELD_BOARD_X "#BOARD_X"
+#define FIELD_BOARD_Y "#BOARD_Y"
 #define FIELD_BOARD_Z "#BOARD_Z"
 #define FIELD_Z_PEN_DOWN "#Z_PEN_DOWN"
 #define FIELD_Z_PEN_UP "#Z_PEN_UP"
@@ -47,7 +47,7 @@ void CamperoUR10::init(C_UR10_Mode _mode) {
 
     // Create Orientation Constraint Quaternion
     tf2::Quaternion ori;
-    ori.setRPY(M_PI-0.1, 0, 0);
+    ori.setRPY(M_PI, 0, 0);
 
     ori_constraint = tf2::toMsg(ori.normalize());
 
@@ -87,10 +87,10 @@ void CamperoUR10::loadDrawConfig(std::string& file) {
         } else if (line.compare(FIELD_H_BOARD) == 0) {
             fin >> h_board;
             
-        } else if (line.compare(FIELD_MIN_BOARD_X) == 0) {
+        } else if (line.compare(FIELD_BOARD_X) == 0) {
             fin >> board_min_x;
             
-        } else if (line.compare(FIELD_MIN_BOARD_Y) == 0) {
+        } else if (line.compare(FIELD_BOARD_Y) == 0) {
             fin >> board_min_y;
 
         } else if (line.compare(FIELD_BOARD_Z) == 0) {
@@ -290,6 +290,7 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
     // go to first point with pen up
     target.position.y = board_min_y + trace.points[0].x * w_div + correct_y;
     target.position.x = board_min_x + trace.points[0].y * h_div + correct_x;
+    target.position.z = z_pen_up;
     waypoints.push_back(target);
 
     // add all points
