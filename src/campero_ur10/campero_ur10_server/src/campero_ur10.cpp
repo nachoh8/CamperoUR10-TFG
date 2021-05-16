@@ -20,6 +20,7 @@ namespace rvt = rviz_visual_tools;
 
 #define TOPIC_NAME_TELEOP "campero_ur10_move"
 #define TOPIC_NAME_IMG_DRAW "image_points"
+#define TOPIC_NAME_CONFIG "update_config"
 
 #define QUEUE_SIZE_TELEOP 1 // teleop topic queue size
 #define QUEUE_SIZE_IMG_DRAW 1 // img_draw topic queue size
@@ -39,11 +40,15 @@ CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_
     
     add_ori = _add_ori;
 
-    if (!config_file.empty()) loadDrawConfig(config_file);
+    //if (!config_file.empty()) loadDrawConfig(config_file);
+    loadConfig(config_file);
 }
 
 void CamperoUR10::init(C_UR10_Mode _mode) {
     mode = _mode;
+
+    // Config Topic
+    config_sub = nh.subscribe(TOPIC_NAME_CONFIG, 1, &CamperoUR10::updateConfigCallback, this);
 
     // Create Orientation Constraint Quaternion
     tf2::Quaternion ori;
@@ -72,49 +77,125 @@ void CamperoUR10::init(C_UR10_Mode _mode) {
     ROS_INFO("tutorial", "End effector link: %s", move_group.getEndEffectorLink().c_str());
 }
 
-
-void CamperoUR10::loadDrawConfig(std::string& file) {
+bool CamperoUR10::loadDrawConfig(std::string& file) {
     std::fstream fin;
     fin.open(file, std::ios::in);
 
+    double _z_pen_down = -1.0, _z_pen_up = -1.0;
+    double _correct_x = -1.0, _correct_y = -1.0;
+    double _board_x = -1.0, _board_y = -1.0, _board_z = BOARD_Z_DEFAULT;
+    double _w_board = -1.0, _h_board = -1.0;
+    
+    int n_param = 0;
     std::string line;
     while (!fin.eof()) {
         getline(fin, line);
         
         if (line.compare(FIELD_W_BOARD) == 0) {
-            fin >> w_board;
+            fin >> _w_board;
+            n_param++;
             
         } else if (line.compare(FIELD_H_BOARD) == 0) {
-            fin >> h_board;
+            fin >> _h_board;
+            n_param++;
             
         } else if (line.compare(FIELD_BOARD_X) == 0) {
-            fin >> board_min_x;
+            fin >> _board_x;
+            n_param++;
             
         } else if (line.compare(FIELD_BOARD_Y) == 0) {
-            fin >> board_min_y;
+            fin >> _board_y;
+            n_param++;
 
-        } else if (line.compare(FIELD_BOARD_Z) == 0) {
-            fin >> board_z;
+        } else if (line.compare(FIELD_BOARD_Z) == 0) { // opcional
+            fin >> _board_z;
+            n_param++;
 
         } else if (line.compare(FIELD_Z_PEN_DOWN) == 0) {
-            fin >> z_pen_down;
+            fin >> _z_pen_down;
+            n_param++;
 
         } else if (line.compare(FIELD_Z_PEN_UP) == 0) {
-            fin >> z_pen_up;
+            fin >> _z_pen_up;
+            n_param++;
             
         } else if (line.compare(FIELD_CORRECT_X) == 0) {
-            fin >> correct_x;
+            fin >> _correct_x;
+            n_param++;
             
         } else if (line.compare(FIELD_CORRECT_Y) == 0) {
-            fin >> correct_y;
+            fin >> _correct_y;
+            n_param++;
             
         }
     }
 
     fin.close();
 
-    draw_okey = !(z_pen_down == -1 || z_pen_up == -1 || correct_y == -1 || correct_x == -1 || w_board == -1 || h_board == -1 || board_min_x == -1 || board_min_y == -1);
+    //bool _draw_okey = !(_z_pen_down == -1 || _z_pen_up == -1 || _correct_y == -1 || _correct_x == -1 || _w_board <= 0 || _h_board <= 0 || _board_x == -1 || _board_y == -1);
+    bool _draw_okey = !(n_param < 8 || _w_board <= 0 || _h_board <= 0);
+
+    if (_draw_okey) {
+        z_pen_down = _z_pen_down;
+        z_pen_up = _z_pen_up;
+        correct_x = _correct_x;
+        correct_y = _correct_y;
+        
+        board_min_x = _board_x;
+        board_min_y = _board_y;
+        board_z = _board_z;
+        w_board = _w_board;
+        h_board = _h_board;
+
+        draw_okey = _draw_okey;
+
+        deleteMarkers(); // remove previuos board and draw new board
+    }
+
+    return _draw_okey;
 }
+
+void CamperoUR10::printDrawConfig() {
+    ROS_INFO("----Draw Config----");
+    if (!draw_okey) {
+        ROS_INFO("Error: configuracion no valida");
+    }
+
+    ROS_INFO("--Pen:");
+    std::string s = "---Z_PEN_DOWN: " + std::to_string(z_pen_down);
+    ROS_INFO(s.c_str());
+    s = "---Z_PEN_UP: " + std::to_string(z_pen_up);
+    ROS_INFO(s.c_str());
+    s = "---Correcion de posicion(x,y): (" + std::to_string(correct_x) + ", " + std::to_string(correct_y) + ")";
+    ROS_INFO(s.c_str());
+
+    ROS_INFO("--Board:");
+    s = "---Size: " + std::to_string(w_board) + "x" + std::to_string(h_board);
+    ROS_INFO(s.c_str());
+    s = "---Position: (" + std::to_string(board_min_x) + ", " + std::to_string(board_min_y) + ", " + std::to_string(board_z) + ")";
+    ROS_INFO(s.c_str());
+}
+
+void CamperoUR10::updateConfigCallback(const std_msgs::String::ConstPtr& file) {
+    std::string s = file->data;
+    loadConfig(s);
+}
+
+void CamperoUR10::loadConfig(std::string& file) {
+    if (file.empty()) {
+        return;
+    }
+    
+    if (mode == C_UR10_Mode::DRAW_IMAGE) {
+        ROS_INFO("----Actualizando Configuracion Dibujar: %s----", file.c_str());
+        if (loadDrawConfig(file)) {
+            printDrawConfig();
+        } else {
+            ROS_INFO("Error: no se ha aplicado la configuracion, faltan parametros");
+        }
+    }
+}
+
 
 void CamperoUR10::deleteMarkers(bool keep_visual_refs) {
     visual_tools.deleteAllMarkers();
@@ -307,6 +388,11 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
 }
 
 void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
+    if (!draw_okey) {
+        ROS_INFO("WARNING: configuracion dibujar incompleta");
+        return;
+    }
+
     ROS_INFO("Image received: %d traces", image.traces.size());
     
     const double w_div = w_board / image.W;
@@ -416,6 +502,8 @@ void CamperoUR10::goHome() {
 }
 
 void CamperoUR10::showBoard() {
+    if (!draw_okey) return;
+
     geometry_msgs::Polygon pl;
     geometry_msgs::Point32 pt;
 
@@ -449,26 +537,10 @@ void CamperoUR10::main() {
         {
             ROS_INFO("Mode: Draw Image");
             
-            std::string s = "Z_PEN_DOWN: " + std::to_string(z_pen_down);
-            ROS_INFO(s.c_str());
-            s = "Z_PEN_UP: " + std::to_string(z_pen_up);
-            ROS_INFO(s.c_str());
-            s = "BOARD_SIZE: " + std::to_string(w_board) + "x" + std::to_string(h_board);
-            ROS_INFO(s.c_str());
-            s = "BOARD_X: " + std::to_string(board_min_x);
-            ROS_INFO(s.c_str());
-            s = "BOARD_Y: " + std::to_string(board_min_y);
-            ROS_INFO(s.c_str());
-
-            if (!draw_okey) {
-                ROS_INFO("Incorrect configuration");
-                return;
-            }
+            //printDrawConfig();
             
             // go ready draw position
             if (!goReadyDraw()) return;
-
-            showBoard();
 
             sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
         }

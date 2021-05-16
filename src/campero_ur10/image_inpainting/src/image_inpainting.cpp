@@ -30,7 +30,7 @@ public:
     // /campero/rear_rgbd_camera/infra1/image_rect_raw ->
     // /campero/rear_rgbd_camera/infra2/image_rect_raw ->
     // /campero/rear_rgbd_camera/realsense2_camera_manager/bond ->
-    image_sub_ = it_.subscribe("/campero/rear_rgbd_camera/color/image_raw", 1,
+    image_sub_ = it_.subscribe("/camera/color/image_raw", 1,
         &ImageConverter::imageCb, this);
     image_pub_ = it_.advertise("/image_converter/output_video", 1);
 

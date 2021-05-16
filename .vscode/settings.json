@@ -60,6 +60,9 @@
         "cinttypes": "cpp",
         "utility": "cpp",
         "typeindex": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "condition_variable": "cpp",
+        "regex": "cpp",
+        "valarray": "cpp"
     }
 }

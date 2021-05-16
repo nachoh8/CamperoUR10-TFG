@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <ros/ros.h>
+#include "std_msgs/String.h"
 
 #include <moveit/move_group_interface/move_group_interface.h>
 
@@ -48,6 +49,7 @@ private:
 
     ros::NodeHandle nh;
     ros::Subscriber sub;
+    ros::Subscriber config_sub;
 
     C_UR10_Mode mode;
 
@@ -57,9 +59,13 @@ private:
 
     void init(C_UR10_Mode _mode);
 
-    void loadDrawConfig(std::string& file);
+    bool loadDrawConfig(std::string& file);
 
     void deleteMarkers(bool keep_visual_refs = true);
+
+    void updateConfigCallback(const std_msgs::String::ConstPtr& file);
+
+    void printDrawConfig();
 
 public:
     CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori);
@@ -95,5 +101,7 @@ public:
     moveit::planning_interface::MoveGroupInterface& getMoveGroup();
 
     void showBoard();
+
+    void loadConfig(std::string& file);
 };
 
