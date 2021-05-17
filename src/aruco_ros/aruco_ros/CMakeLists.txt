@@ -25,6 +25,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES aruco_ros_utils
   CATKIN_DEPENDS aruco sensor_msgs tf 
+  DEPENDS aruco_msgs
 )
 
 include_directories(
@@ -53,11 +54,16 @@ add_executable(marker_publisher src/marker_publish.cpp
 add_dependencies(marker_publisher ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 target_link_libraries(marker_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
+add_executable(aruco_detector src/aruco_detector.cpp
+                      src/aruco_ros_utils.cpp)
+add_dependencies(aruco_detector aruco_msgs_generate_messages_cpp ${PROJECT_NAME}_gencfg)
+target_link_libraries(aruco_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
 #############
 ## Install ##
 #############
 
-install(TARGETS single double marker_publisher aruco_ros_utils
+install(TARGETS aruco_detector single double marker_publisher aruco_ros_utils
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
