@@ -4,7 +4,9 @@
 ********************************/
 
 #include <iostream>
+#include <string>
 #include <vector>
+#include <utility>
 
 #include <ros/ros.h>
 
@@ -30,9 +32,10 @@
 
 using namespace aruco;
 
-class ArucoSimple
+class ArucoDetector
 {
 private:
+
   cv::Mat inImage;
   aruco::CameraParameters camParam;
   tf::StampedTransform rightToLeft;
@@ -61,7 +64,7 @@ private:
   dynamic_reconfigure::Server<aruco_ros::ArucoThresholdConfig> dyn_rec_server;
 
 public:
-  ArucoSimple()
+  ArucoDetector()
     : cam_info_received(false),
       nh("~"),
       it(nh)
@@ -91,8 +94,8 @@ public:
     
 
 
-    image_sub = it.subscribe("/image", 1, &ArucoSimple::image_callback, this);
-    cam_info_sub = nh.subscribe("/camera_info", 1, &ArucoSimple::cam_info_callback, this);
+    image_sub = it.subscribe("/image", 1, &ArucoDetector::image_callback, this);
+    cam_info_sub = nh.subscribe("/camera_info", 1, &ArucoDetector::cam_info_callback, this);
 
     image_pub = it.advertise("result", 1);
     markers_pub = nh.advertise<aruco_msgs::MarkerArray>("markers", 100);
@@ -113,9 +116,84 @@ public:
     ROS_INFO("Aruco node will publish pose to TF with %s as parent and %s as child.",
              reference_frame.c_str(), marker_frame.c_str());
 
-    dyn_rec_server.setCallback(boost::bind(&ArucoSimple::reconf_callback, this, _1, _2));
+    dyn_rec_server.setCallback(boost::bind(&ArucoDetector::reconf_callback, this, _1, _2));
   }
 
+
+  void filterRectPoints(std::vector<cv::Poin2ft>& pts, std::vector<cv::Point2f>& res) {
+    const int len = pts.size();
+    if (len == 4) return;
+
+    std::vector< std::pair<double, int> > sum_v(len);
+    std::vector< std::pair<double, int> > diff_v(len);
+    for (int i = 0; i < len; i++) {
+      sum_v[i] = std::make_pair(pts[i].x + pts[i].y, i);
+      diff_v[i] = std::make_pair(pts[i].y - pts[i].x, i);
+    }
+
+    std::sort(sum_v.begin(), sum_v.end());
+    std::sort(diff_v.begin(), diff_v.end());
+
+    // top-left point min sum -> idx 0
+	  // bottom-right point max sum -> idx 2
+    // top-right point min diff -> idx 1
+	  // bottom-left max diff -> idx 3
+    res.push_back(pts[sum_v[0].second]);
+    res.push_back(pts[diff_v[0].second]);
+    res.push_back(pts[sum_v[sum_v.size()-1].second]);
+    res.push_back(pts[diff_v[diff_v.size()-1].second]);
+  }
+
+  void correctImage(std::vector<cv::Point2f>& marker_pts, cv::Mat& image) {
+    // WARNING: si se hace con hull los puntos deben ser Point (tipo entero)
+    //std::vector< std::vector<cv::Point> > hull(1);
+    //cv::convexHull(cv::Mat(marker_pts), hull[0], false);
+    
+    // Get Corner points
+    // filterRectPoints(hull[0]);
+    std::vector<cv::Point2f> src_pts;
+    filterRectPoints(marker_pts, src_pts);
+
+    cv::Point2f tl = src_pts[0];//hull[0][0];
+    cv::Point2f tr = src_pts[1];//hull[0][1];
+    cv::Point2f br = src_pts[2];//hull[0][2];
+    cv::Point2f bl = src_pts[3];//hull[0][3];
+
+    // Draw Convex Shape
+    // cv::drawContours( inImage, hull, 0, cv::Scalar(0,255,0));
+    /*cv::line(image, tl, tr, cv::Scalar(255,0,0), 2);
+    cv::line(image, tl, bl, cv::Scalar(255,0,0), 2);
+    cv::line(image, tr, br, cv::Scalar(255,0,0), 2);
+    cv::line(image, bl, br, cv::Scalar(255,0,0), 2);*/
+  
+    // Draw convex points
+    /*for (int i = 0; i < hull[0].size(); i++) {
+      std::cout << hull[0][i] << std::endl;
+      cv::circle(image, hull[0][i], 10, cv::Scalar(0,0,0), -1);
+    }*/
+
+    // Get Warped Points
+    double width_top = cv::norm(tr - tl);
+    double width_bottom = cv::norm(br - bl);
+    double max_W = width_top > width_bottom ? width_top : width_bottom;
+    // std::cout << width_top << " " << width_bottom << std::endl;
+
+    double height_left = cv::norm(bl - tl);
+    double height_right = cv::norm(br - tr);
+    double max_H = height_left > height_right ? height_left : height_right;
+    // std::cout << height_left << " " << height_right << std::endl;
+
+    std::vector<cv::Point2f> dst_pts;
+    dst_pts.push_back(cv::Point2f(0, 0));
+    dst_pts.push_back(cv::Point2f(max_W-1, 0));
+    dst_pts.push_back(cv::Point2f(max_W-1, max_H-1));
+    dst_pts.push_back(cv::Point2f(0, max_H-1));
+    
+    // Transform image
+    cv::Mat H = cv::getPerspectiveTransform(src_pts, dst_pts);
+    cv::warpPerspective(image, image, H, cv::Size(max_W, max_H));
+  }
+  
   bool getTransform(const std::string& refFrame,
                     const std::string& childFrame,
                     tf::StampedTransform& transform)
@@ -157,7 +235,7 @@ public:
     if ((image_pub.getNumSubscribers() == 0) &&
         (markers_pub.getNumSubscribers() == 0))
     {
-      ROS_DEBUG("No subscribers, not looking for aruco markers");
+      ROS_INFO("No subscribers, not looking for aruco markers");
       return;
     }
 
@@ -180,7 +258,7 @@ public:
         marker_array.header.stamp = curr_stamp;
 
         // Point Set of Marker Points
-        std::vector<cv::Point> marker_pts;
+        std::vector<cv::Point2f> marker_pts;
 
         // for each marker, draw info and its boundaries in the image
         for (size_t i = 0; i < markers.size(); ++i) {
@@ -201,14 +279,17 @@ public:
             * static_cast<tf::Transform>(rightToLeft) 
             * transform;
 
+          std::string marker_frame_final = marker_frame + "_" + std::to_string(markers[i].id);
           tf::StampedTransform stampedTransform(transform, curr_stamp,
-                                                reference_frame, marker_frame);
+                                                reference_frame, marker_frame_final);
           br.sendTransform(stampedTransform);
           
           aruco_msgs::Marker marker_msg;
           tf::poseTFToMsg(transform, marker_msg.pose.pose);
           
-          marker_msg.header = marker_array.header;
+          // marker_msg.header = marker_array.header;
+          marker_msg.header.frame_id = marker_frame_final;
+          marker_msg.header.stamp = curr_stamp;
           marker_msg.id = markers[i].id;
 
           // TODO: ¿que hay que poner en confidence y en pose.covariance?
@@ -227,7 +308,8 @@ public:
 
           // 4.Add Marker Points to Point Set
           for (int j = 0; j < markers[i].size(); j++) {
-            marker_pts.push_back(cv::Point(markers[i][j].x,markers[i][j].y));
+            // marker_pts.push_back(cv::Point(markers[i][j].x,markers[i][j].y));
+            marker_pts.push_back(markers[i][j]);
           }
         }
 
@@ -236,23 +318,11 @@ public:
         
         // Get Convex Hull
         if (markers.size() == 4) {
-          
-          std::vector< std::vector<cv::Point> > hull(1);
-          cv::convexHull(cv::Mat(marker_pts), hull[0], false);
-
-          // Draw Convex Shape
-          cv::drawContours( inImage, hull, 0, cv::Scalar(0,255,0));
-
-          // Draw convex points
-          for (int i = 0; i < hull[0].size(); i++) {
-            cv::circle(inImage, hull[0][i], 10, cv::Scalar(0,0,0), -1);
-          }
+          correctImage(marker_pts, inImage);
         }
 
         // Publish Image
-        if(image_pub.getNumSubscribers() > 0)
-        {
-          //show input with augmented information
+        if (image_pub.getNumSubscribers() > 0) {
           cv_bridge::CvImage out_msg;
           out_msg.header.stamp = curr_stamp;
           out_msg.encoding = sensor_msgs::image_encodings::RGB8;
@@ -260,11 +330,11 @@ public:
           image_pub.publish(out_msg.toImageMsg());
         }
 
-        if (markers.size() == 4) {
+        /*if (markers.size() == 4) {
           cv::imshow("Res", inImage);
           cv::waitKey(0);
           cv::destroyWindow("Res");
-        }
+        }*/
       }
       catch (cv_bridge::Exception& e)
       {
@@ -308,7 +378,7 @@ int main(int argc,char **argv)
 {
   ros::init(argc, argv, "aruco_simple");
 
-  ArucoSimple node;
+  ArucoDetector node;
 
   ros::spin();
 }
