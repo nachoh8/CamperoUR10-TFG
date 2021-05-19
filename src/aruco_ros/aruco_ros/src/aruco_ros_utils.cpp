@@ -55,17 +55,17 @@ tf::Transform aruco_ros::arucoMarker2Tf(const aruco::Marker &marker, bool rotate
     if (rotate_marker_axis)
     {
       cv::Mat rotate_to_ros(3, 3, CV_64FC1);
-      // -1 0 0
-      // 0 0 1
-      // 0 1 0
-      rotate_to_ros.at<double>(0,0) = -1.0;
+      // 0 -1 0
+      // 0 0 -1
+      // 1 0 0
+      rotate_to_ros.at<double>(0,0) = 0.0;
       rotate_to_ros.at<double>(0,1) = 0.0;
-      rotate_to_ros.at<double>(0,2) = 0.0;
-      rotate_to_ros.at<double>(1,0) = 0.0;
+      rotate_to_ros.at<double>(0,2) = 1.0;
+      rotate_to_ros.at<double>(1,0) = -1.0;
       rotate_to_ros.at<double>(1,1) = 0.0;
-      rotate_to_ros.at<double>(1,2) = 1.0;
+      rotate_to_ros.at<double>(1,2) = 0.0;
       rotate_to_ros.at<double>(2,0) = 0.0;
-      rotate_to_ros.at<double>(2,1) = 1.0;
+      rotate_to_ros.at<double>(2,1) = -1.0;
       rotate_to_ros.at<double>(2,2) = 0.0;
       rot = rot*rotate_to_ros.t();
     }

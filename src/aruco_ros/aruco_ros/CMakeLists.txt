@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   aruco_msgs
   sensor_msgs
   visualization_msgs
+  campero_ur10_msgs
 )
 
 generate_dynamic_reconfigure_options(
@@ -27,7 +28,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES aruco_ros_utils
   CATKIN_DEPENDS aruco sensor_msgs tf 
-  DEPENDS aruco_msgs
+  DEPENDS aruco_msgs campero_ur10_msgs
 )
 
 include_directories(
@@ -58,7 +59,7 @@ target_link_libraries(marker_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(aruco_detector src/aruco_detector.cpp
                       src/aruco_ros_utils.cpp)
-add_dependencies(aruco_detector aruco_msgs_generate_messages_cpp ${PROJECT_NAME}_gencfg)
+add_dependencies(aruco_detector campero_ur10_msgs_generate_messages_cpp ${PROJECT_NAME}_gencfg)
 target_link_libraries(aruco_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############

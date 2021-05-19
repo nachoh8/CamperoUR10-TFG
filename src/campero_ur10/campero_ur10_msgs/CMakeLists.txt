@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   message_generation
 )
 
@@ -23,6 +24,8 @@ find_package(catkin REQUIRED COMPONENTS
 ################################################################################
 add_message_files(
   FILES
+  ArucoMarker.msg
+  ArucoMarkerArray.msg
   ImgPoint.msg
   ImgTrace.msg
   ImageDraw.msg
@@ -33,6 +36,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  geometry_msgs
 )
 
 ################################################################################
@@ -43,7 +47,7 @@ generate_messages(
 # Declare catkin specific configuration to be passed to dependent projects
 ################################################################################
 catkin_package(
-  CATKIN_DEPENDS std_msgs message_runtime roscpp rospy
+  CATKIN_DEPENDS std_msgs geometry_msgs message_runtime roscpp rospy
 )
 
 ################################################################################
