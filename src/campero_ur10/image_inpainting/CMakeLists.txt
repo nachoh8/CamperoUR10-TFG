@@ -36,6 +36,7 @@ catkin_package(
 include_directories(SYSTEM include ${Boost_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 add_executable(image_inpainting src/image_inpainting.cpp)
+add_dependencies(image_inpainting campero_ur10_msgs_generate_messages_cpp)
 target_link_libraries(image_inpainting ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 install(TARGETS image_inpainting DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
