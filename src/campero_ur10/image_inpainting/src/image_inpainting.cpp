@@ -8,6 +8,7 @@
 
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 #include <image_transport/image_transport.h> // permite suscribirse/publicar en canales de imagen
 #include <sensor_msgs/image_encodings.h>
@@ -25,6 +26,9 @@
 #include <campero_ur10_msgs/ArucoMarkerArray.h>
 #include <campero_ur10_msgs/ArucoMarkersImg.h>
 
+
+static const std::string NODE_NAME = "image_inpainting";
+
 typedef Eigen::Matrix<float, 3, 1> VectorEigen;
 
 class ImageInpainting
@@ -35,6 +39,10 @@ private:
     /// Ros
     ros::NodeHandle nh;
     image_transport::ImageTransport it;
+    tf::TransformListener _tfListener;
+
+    std::string camera_frame , cam_ref_frame, robot_frame;
+    tf::StampedTransform rightToLeft;
 
     // aruco markers and image
     ros::Subscriber markers_img_sub;
@@ -60,6 +68,7 @@ private:
             distortionEffect; // 4x1
     cv::Size camSize;
 
+    int max_dist_error;
     bool valid_matrix_pnp = false; // indica si rvec y tvec son matrices validas dadas por solvePnP
     cv::Mat rvec, // 1x3 
             tvec, // 1x3
@@ -71,10 +80,18 @@ private:
 
 public:
     ImageInpainting() : it(nh) {
-        image_debug_pub = it.advertise("/image_inpainting/image_debug", 1);
-        image_res_pub = it.advertise("/image_inpainting/image_res", 1);
+        image_debug_pub = it.advertise("/" + NODE_NAME + "/image_debug", 1);
+        image_res_pub = it.advertise("/" + NODE_NAME + "/image_res", 1);
         markers_img_sub = nh.subscribe("/aruco_detector/markers_img", 1, &ImageInpainting::markers_img_callback, this);
         cam_info_sub = nh.subscribe("/camera/color/camera_info", 1, &ImageInpainting::cam_info_callback, this);
+
+        nh.param<std::string>("/" + NODE_NAME + "/cam_ref_frame", cam_ref_frame, "");
+        nh.param<std::string>("/" + NODE_NAME + "/camera_frame", camera_frame, "");
+        nh.param<std::string>("/" + NODE_NAME + "/robot_frame", robot_frame, "");
+        nh.param<int>("/" + NODE_NAME + "/max_dist_error", max_dist_error, 5);
+
+        ROS_INFO("Max Distance Error: %d px", max_dist_error);
+        ROS_INFO("Robot frame: %s | Camera Reference frame: %s | Camera frame: %s ", robot_frame.c_str(), cam_ref_frame.c_str(), camera_frame.c_str());
     }
 
     cv::Point H_to_Orig(cv::Point pt) {
@@ -314,7 +331,7 @@ public:
             //std::cout << "uv " << uv << std::endl;
             // cv::circle( img_correct, cv::Point(uv.x, uv.y), 10, cv::Scalar(255,0,0), 3, cv::LINE_AA);
 
-            if (cv::norm(uv - marker_center_pts[i]) > 5) {
+            if (cv::norm(uv - marker_center_pts[i]) > max_dist_error) {
                 return false;
             }
         }
@@ -342,9 +359,61 @@ public:
         return res;
     }
 
+    void ptsCam2World(const std::vector<cv::Point3f>& pts_cam, const geometry_msgs::Pose& pose_base, const tf::Transform& transform_base) {
+        ros::Time t_current = ros::Time::now();
+        static tf::TransformBroadcaster br;
+
+        geometry_msgs::Pose p = pose_base;
+        int i = 0;
+        for (auto &pt : pts_cam) {
+            p.position.x = pt.x;
+            p.position.y = pt.y;
+            p.position.z = pt.z;
+            tf::Transform transform;
+            tf::poseMsgToTF(p, transform);
+            transform = transform_base * transform;
+            tf::StampedTransform stampedTransform(transform, t_current,
+                                            cam_ref_frame, "pt_board_" + std::to_string(i));
+            br.sendTransform(stampedTransform);
+            i++;
+        }
+    }
+
     void clearMarkers() {
         marker_center_pts.clear();
         marker_pose_pts.clear();
+    }
+
+    bool getTransform(const std::string& refFrame, const std::string& childFrame, tf::StampedTransform& transform) {
+        std::string errMsg;
+
+        if ( !_tfListener.waitForTransform(refFrame,
+                                        childFrame,
+                                        ros::Time(0),
+                                        ros::Duration(0.5),
+                                        ros::Duration(0.01),
+                                        &errMsg)
+            )
+        {
+            ROS_ERROR_STREAM("Unable to get pose from TF: " << errMsg);
+            return false;
+        }
+        else
+        {
+            try
+            {
+                _tfListener.lookupTransform( refFrame, childFrame,
+                                            ros::Time(0),                  //get latest available
+                                            transform);
+            }
+            catch ( const tf::TransformException& e)
+            {
+                ROS_ERROR_STREAM("Error in lookupTransform of " << childFrame << " in " << refFrame);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     void markers_img_callback(const campero_ur10_msgs::ArucoMarkersImg& msg) {
@@ -353,8 +422,6 @@ public:
             return;
         }
         
-        static tf::TransformBroadcaster br;
-        ros::Time t_current = ros::Time::now();
         cv_bridge::CvImagePtr cv_ptr;
         try {
             cv_ptr = cv_bridge::toCvCopy(msg.img, sensor_msgs::image_encodings::BGR8);
@@ -375,23 +442,34 @@ public:
                 ROS_WARN("Error calculando parametros(%d/%d)", (++num_errors), num_it);
                 return;
             }
-            
-            std::vector<cv::Point> pts = test(img, img_correct);
-            std::vector<cv::Point3f> pts_w = pts2Camera(pts);
 
-            geometry_msgs::Pose p = markers[0].pose;
-            int i = 0;
-            for (auto &pt_w : pts_w) {
-                p.position.x = pt_w.x;
-                p.position.y = pt_w.y;
-                p.position.z = pt_w.z;
-                tf::Transform transform;
-                tf::poseMsgToTF(p, transform);
-                tf::StampedTransform stampedTransform(transform, t_current,
-                                                "camera_color_optical_frame", "pt_board_" + std::to_string(i));
-                br.sendTransform(stampedTransform);
-                i++;
+            // Optical cam to cam ref
+            tf::StampedTransform Cam_optToCam_ref;
+            Cam_optToCam_ref.setIdentity();
+            if ( cam_ref_frame != camera_frame ) {
+                if (!getTransform(cam_ref_frame, camera_frame, Cam_optToCam_ref)) {
+                    return;
+                }
             }
+
+            // ref cam to robot ref
+            tf::StampedTransform Cam_refToRobot_ref;
+            Cam_refToRobot_ref.setIdentity();
+            if ( cam_ref_frame != robot_frame ) {
+                if (!getTransform(cam_ref_frame, robot_frame, Cam_refToRobot_ref)) {
+                    return;
+                }
+            }
+
+            tf::Transform transform_base = static_cast<tf::Transform>(Cam_optToCam_ref)
+                                      * static_cast<tf::Transform>(Cam_refToRobot_ref) 
+                                      * static_cast<tf::Transform>(rightToLeft);
+            
+            std::vector<cv::Point> pts_img = test(img, img_correct);
+            std::vector<cv::Point3f> pts_cam = pts2Camera(pts_img);
+
+            ptsCam2World(pts_cam, markers[TOP_LEFT_IDX].pose, transform_base);
+            
 
             // Publish Result Image
             if (image_res_pub.getNumSubscribers() > 0) {
@@ -431,6 +509,13 @@ public:
         for(int i=0; i<4; ++i)
             distortionEffect.at<double>(i, 0) = 0;
 
+        rightToLeft.setIdentity();
+        rightToLeft.setOrigin(
+            tf::Vector3(
+                -cam_info.P[3]/cam_info.P[0],
+                -cam_info.P[7]/cam_info.P[5],
+                0.0));
+
         cam_info_received = true;
         cam_info_sub.shutdown();
     }
@@ -438,7 +523,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "image_inpainting");
+    ros::init(argc, argv, NODE_NAME);
     
     ImageInpainting im;
     

@@ -1,8 +1,0 @@
-<launch>
-
-  <node name="image_inpainting" pkg="image_inpainting"
-      type="image_inpainting" respawn="false"
-      output="screen">
-  </node>
-
-</launch>
