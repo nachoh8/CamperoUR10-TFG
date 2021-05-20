@@ -30,12 +30,11 @@ typedef Eigen::Matrix<float, 3, 1> VectorEigen;
 class ImageInpainting
 {
 private:
-    /// Ros
+    int num_errors = 0, num_it = 0;
 
+    /// Ros
     ros::NodeHandle nh;
     image_transport::ImageTransport it;
-    
-    tf::TransformBroadcaster br;
 
     // aruco markers and image
     ros::Subscriber markers_img_sub;
@@ -51,18 +50,25 @@ private:
     image_transport::Publisher image_debug_pub;
 
     /// Image Procesing
-    cv::Mat H; // homografy matrix
+    int TOP_LEFT_IDX, TOP_RIGHT_IDX, BOTTOM_RIGHT_IDX, BOTTOM_LEFT_IDX; // indice de la marca top left, top right, bottom left, bottom right
+    std::vector<cv::Point2f> marker_center_pts; // position on warped img
+    std::vector<cv::Point3f> marker_pose_pts; // pose in camera coordinates
 
-    cv::Mat cameraMatrix, distortionEffect;
+    cv::Mat H; // homografy matrix (original image -> warped image)
+
+    cv::Mat cameraMatrix, // 3x3
+            distortionEffect; // 4x1
     cv::Size camSize;
 
-    cv::Mat rvec, tvec, rotationMatrix;
+    bool valid_matrix_pnp = false; // indica si rvec y tvec son matrices validas dadas por solvePnP
+    cv::Mat rvec, // 1x3 
+            tvec, // 1x3
+            rotationMatrix; // 3x3
 
-    double z_markers_const;
+    // plano formado por las marcas aruco
+    double z_markers_const; // distancia de la camara al plano, la camara es perpendicular al plano
+    cv::Point3f normal_plane, plane_o; // normal y punto origen del plano
 
-    cv::Point3f normal_plane, plane_o;
-
-    
 public:
     ImageInpainting() : it(nh) {
         image_debug_pub = it.advertise("/image_inpainting/image_debug", 1);
@@ -71,9 +77,7 @@ public:
         cam_info_sub = nh.subscribe("/camera/color/camera_info", 1, &ImageInpainting::cam_info_callback, this);
     }
 
-    ~ImageInpainting(){}
-
-    cv::Point ptTfPerspective(cv::Point pt) {
+    cv::Point H_to_Orig(cv::Point pt) {
         cv::Point3d p_src(pt.x, pt.y, 1);
         cv::Point3d p_dst(cv::Mat(H.inv() * cv::Mat(p_src)));
         p_dst /= p_dst.z; // normalize
@@ -81,8 +85,12 @@ public:
         return cv::Point(p_dst.x, p_dst.y);
     }
 
-    geometry_msgs::Pose pt2Pose(cv::Point pt) {
+    cv::Point Orig_to_H(cv::Point pt) {
+        cv::Point3d p_src(pt.x, pt.y, 1);
+        cv::Point3d p_dst(cv::Mat(H * cv::Mat(p_src)));
+        p_dst /= p_dst.z; // normalize
 
+        return cv::Point(p_dst.x, p_dst.y);
     }
 
     cv::Point3f pose2Pt3f(const geometry_msgs::Pose& pose) {
@@ -101,6 +109,29 @@ public:
         cent.y /= float(marker.img_points.size());
 
         return cent;
+    }
+    
+    void orderMarkers(const std::vector<campero_ur10_msgs::ArucoMarker>& markers) {
+        const int len = markers.size();
+
+        std::vector< std::pair<double, int> > sum_v(len);
+        std::vector< std::pair<double, int> > diff_v(len);
+        for (int i = 0; i < len; i++) {
+            sum_v[i] = std::make_pair(markers[i].pose.position.x + markers[i].pose.position.y, i);
+            diff_v[i] = std::make_pair(markers[i].pose.position.y - markers[i].pose.position.x, i);
+        }
+
+        std::sort(sum_v.begin(), sum_v.end());
+        std::sort(diff_v.begin(), diff_v.end());
+        
+        // top-left point min sum
+        TOP_LEFT_IDX = sum_v[0].second;
+        // top-right point min diff
+        TOP_RIGHT_IDX = diff_v[0].second;
+        // bottom-right point max sum
+        BOTTOM_RIGHT_IDX = sum_v[sum_v.size()-1].second;
+        // bottom-left max diff
+        BOTTOM_LEFT_IDX = diff_v[diff_v.size()-1].second;
     }
     
     void filterRectPoints(std::vector<cv::Point2f>& pts, std::vector<cv::Point2f>& res) {
@@ -127,29 +158,6 @@ public:
         res.push_back(pts[diff_v[diff_v.size()-1].second]);
     }
 
-    void filterRectPoints(std::vector<cv::Point3f>& pts, std::vector<cv::Point3f>& res) {
-        const int len = pts.size();
-
-        std::vector< std::pair<double, int> > sum_v(len);
-        std::vector< std::pair<double, int> > diff_v(len);
-        for (int i = 0; i < len; i++) {
-            sum_v[i] = std::make_pair(pts[i].x + pts[i].y, i);
-            diff_v[i] = std::make_pair(pts[i].y - pts[i].x, i);
-        }
-
-        std::sort(sum_v.begin(), sum_v.end());
-        std::sort(diff_v.begin(), diff_v.end());
-        
-        // top-left point min sum -> idx 0
-        res.push_back(pts[sum_v[0].second]);
-        // top-right point min diff -> idx 1
-        res.push_back(pts[diff_v[0].second]);
-        // bottom-right point max sum -> idx 2
-        res.push_back(pts[sum_v[sum_v.size()-1].second]);
-        // bottom-left max diff -> idx 3
-        res.push_back(pts[diff_v[diff_v.size()-1].second]);
-    }
-    
     void correctImage(const std::vector<campero_ur10_msgs::ArucoMarker>& markers, cv::Mat& image) {
         
         // Cast to cv::Point/2f type
@@ -192,9 +200,16 @@ public:
         // Transform image
         H = cv::getPerspectiveTransform(src_pts, dst_pts);
         cv::warpPerspective(image, image, H, cv::Size(max_W, max_H));
+
+        // Get Marker Centers on warped img
+        for (int i = 0; i < markers.size(); i++) {
+            cv::Point center = Orig_to_H(getMarkerCenter(markers[i]));
+            marker_center_pts.push_back(center);
+            // cv::circle( image, center, 5, cv::Scalar(0,0,255), 3, cv::LINE_AA);
+        }
     }
     
-    cv::Point test(cv::Mat& img, cv::Mat& img_correct) {
+    std::vector<cv::Point> test(cv::Mat& img, cv::Mat& img_correct) {
         cv::Mat gray;
         cv::cvtColor(img_correct, gray, cv::COLOR_BGR2GRAY);
 
@@ -204,7 +219,7 @@ public:
         std::vector<cv::Vec3f> circles;
         cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, gray.rows/16, 100, 30, 1, 30);
 
-        if (circles.empty()) return cv::Point(-1,-1);
+        //if (circles.empty()) return cv::Point(-1,-1);
          
         // cogemos el primero
         cv::Vec3i c = circles[0];
@@ -212,51 +227,105 @@ public:
         // Draw on Warped Image
         cv::Point center = cv::Point(c[0], c[1]);
         // draw marker on center
-        cv::drawMarker(img_correct, center, cv::Scalar(0,0,255), cv::MARKER_CROSS);
+        cv::drawMarker(img_correct, center, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 3);
         // draw circle
         int radius = c[2];
         cv::circle( img_correct, center, radius, cv::Scalar(0,0,255), 3, cv::LINE_AA);
 
         // Transform to original image
-        cv::Point pt_r = ptTfPerspective(cv::Point(center.x + radius, center.y)); // punto en la circunferencia del circulo
-        cv::Point center_o = ptTfPerspective(center);
+        cv::Point pt_r = H_to_Orig(cv::Point(center.x + radius, center.y)); // punto en la circunferencia del circulo
+        cv::Point center_o = H_to_Orig(center);
         float r = cv::norm(pt_r - center_o);
         
         // Draw on Original Image
-        cv::drawMarker(img, center_o, cv::Scalar(0,0,255), cv::MARKER_CROSS);
+        cv::drawMarker(img, center_o, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 3);
         cv::circle( img, center_o, r, cv::Scalar(0,0,255), 3, cv::LINE_AA);
 
-        return center_o;
-    }
+        std::vector<cv::Point> res;
+        res.push_back(center);
 
-    /*
-    void calculateMatrix(const std::vector<campero_ur10_msgs::ArucoMarker>& markers) {
-        std::vector<cv::Point2f> imgPts;
-        std::vector<cv::Point3f> markerPts;
-
-        //z_markers_const = 0.0;
-        for (auto &marker : markers) {
-            imgPts.push_back(getMarkerCenter(marker));
-            geometry_msgs::Pose p = marker.pose;
-            markerPts.push_back(cv::Point3f(p.position.x ,p.position.y, p.position.z));
-
-            //z_markers_const += p.position.z;
+        for (int i = 0; i < marker_center_pts.size(); i++) {
+            // Warped image
+            cv::Point pt(marker_center_pts[i].x, marker_center_pts[i].y);
+            cv::drawMarker(img_correct, pt, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 3);
+            res.push_back(pt);
+            
+            // Original image
+            center_o = H_to_Orig(pt);
+            cv::drawMarker(img, center_o, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 3);
         }
 
-        z_markers_const = markers[0].pose.position.z;
-        //std::cout << z_markers_const << std::endl;
+        return res;
+    }
 
-        rvec = cv::Mat(1,3,cv::DataType<double>::type);
-        tvec = cv::Mat(1,3,cv::DataType<double>::type);
-        rotationMatrix = cv::Mat (3,3,cv::DataType<double>::type);
+    void getMarkersParameters(const std::vector<campero_ur10_msgs::ArucoMarker>& markers) {
+        
+        orderMarkers(markers);
+        
+        const int len = markers.size();
 
-        cv::solvePnP(markerPts, imgPts, cameraMatrix, distortionEffect, rvec, tvec);
+        for (int i = 0; i < len; i++) {
+            cv::Point3f p = pose2Pt3f(markers[i].pose);
+            // std::cout << i << " -> " << p << std::endl;
+            marker_pose_pts.push_back(p);
+        }
+        
+        // Plane parameters
+        plane_o = marker_pose_pts[TOP_LEFT_IDX];
+        cv::Point3f u = marker_pose_pts[TOP_RIGHT_IDX] - plane_o;
+        cv::Point3f v = marker_pose_pts[BOTTOM_LEFT_IDX] - plane_o;
+        
+        normal_plane = u.cross(v);
+        VectorEigen n;
+        n << normal_plane.x, normal_plane.y, normal_plane.z;
+        n.normalize();
+        normal_plane = cv::Point3f(n(0), n(1), n(2));
+        
+
+        /*std::cout << "Calc Matrix" << std::endl;
+        std::cout << u << "x" << v << " = " << normal_plane << std::endl;
+        std::cout << plane_o << std::endl;*/
+    }
+
+    bool calculateTranformParam() {
+        if (valid_matrix_pnp) { // si son validas tvec y rvec sirven como solución inicial
+            cv::solvePnP(marker_pose_pts, marker_center_pts, cameraMatrix, distortionEffect, rvec, tvec, true);
+        } else {
+            cv::solvePnP(marker_pose_pts, marker_center_pts, cameraMatrix, distortionEffect, rvec, tvec);
+        }
         cv::Rodrigues(rvec, rotationMatrix);
+        
+        z_markers_const = 0.0;
+        for (int i = 0; i < marker_pose_pts.size(); i++) {
+            //std::cout << "----ID " << i << "----" << std::endl;
+            //std::cout << "world pose " << marker_pose_pts[i] << std::endl;
+
+            cv::Mat pt_c = (cv::Mat_<double>(3,1) << marker_pose_pts[i].x, marker_pose_pts[i].y, marker_pose_pts[i].z);
+            //std::cout << "pt_c " << pt_c << std::endl;
+
+            cv::Mat1f uv_m = cameraMatrix * (rotationMatrix * pt_c + tvec);
+            //std::cout << "uv_m " << uv_m << std::endl;
+            
+            //std::cout << "true center " << marker_center_pts[i] << std::endl;
+            double d = uv_m(2);
+            z_markers_const += d;
+            //std::cout << "d " << d << std::endl;
+            cv::Point2f uv(uv_m(0) / d, uv_m(1) / d);
+            //std::cout << "uv " << uv << std::endl;
+            // cv::circle( img_correct, cv::Point(uv.x, uv.y), 10, cv::Scalar(255,0,0), 3, cv::LINE_AA);
+
+            if (cv::norm(uv - marker_center_pts[i]) > 5) {
+                return false;
+            }
+        }
+
+        z_markers_const /= marker_pose_pts.size();
+
+        return true;
     }
 
     std::vector<cv::Point3f> pts2Camera(std::vector<cv::Point>& pts) {
-        //cv::Mat leftSideMat  = rotationMatrix.inv() * cameraMatrix.inv();
-        cv::Mat leftSideMat  = cameraMatrix.inv();
+        cv::Mat leftSideMat  = rotationMatrix.inv() * cameraMatrix.inv() * z_markers_const;
         cv::Mat rightSideMat = rotationMatrix.inv() * tvec;
         
         std::vector<cv::Point3f> res;
@@ -264,75 +333,18 @@ public:
             cv::Point pt = pts[i];
             
             cv::Mat uvPt = (cv::Mat_<double>(3,1) << pt.x, pt.y, 1);
-            cv::Mat auxLeft  = leftSideMat * uvPt;
-            std::cout << i << std::endl;
-            std::cout << pt << std::endl;
-            std::cout << auxLeft << std::endl;
+            cv::Mat1f pt_m  = leftSideMat * uvPt - rightSideMat;
+            cv::Point3f pt_w(pt_m(0), pt_m(1), pt_m(2));
 
-            double s = (z_markers_const + rightSideMat.at<double>(2,0)) / auxLeft.at<double>(2,0); 
-
-            cv::Mat1f r = rotationMatrix.inv() * (s * cameraMatrix.inv() * uvPt - tvec);
-            res.push_back(cv::Point3f(r(0), r(1), r(2)));
+            res.push_back(pt_w);
         }
 
         return res;
     }
-    */
-    
-    void calculateMatrix(const std::vector<campero_ur10_msgs::ArucoMarker>& markers) {
-        const int len =markers.size();
 
-        std::vector<cv::Point3f> src_pts, res_pts;
-        for (int i = 0; i < len; i++) {
-            cv::Point3f p = pose2Pt3f(markers[i].pose);
-            std::cout << i << " -> " << p << std::endl;
-            src_pts.push_back(p);
-        }
-        
-        /*
-        filterRectPoints(src_pts, res_pts);
-        for (int i = 0; i < res_pts.size(); i++) {
-            std::cout << i << " -> " << res_pts[i] << std::endl;
-        }*/
-        cv::Point3f u = src_pts[1] - src_pts[0];
-        cv::Point3f v = src_pts[3] - src_pts[0];
-        
-        normal_plane = u.cross(v);
-        VectorEigen n;
-        n << normal_plane.x, normal_plane.y, normal_plane.z;
-        n.normalize();
-        normal_plane = cv::Point3f(n(0), n(1), n(2));
-        plane_o = src_pts[0];
-
-        std::cout << "Calc Matrix" << std::endl;
-        std::cout << u << "x" << v << " = " << normal_plane << std::endl;
-        std::cout << plane_o << std::endl;
-    }
-
-    std::vector<cv::Point3f> pts2Camera(std::vector<cv::Point>& pts) {
-        
-        std::vector<cv::Point3f> res;
-        for (int i = 0; i < pts.size(); i++) {
-            cv::Point pt = pts[i];
-            
-            cv::Mat uvPt = (cv::Mat_<double>(3,1) << pt.x, pt.y, 1);
-            cv::Mat1f l_m  = cameraMatrix.inv() * uvPt;
-            cv::Point3f l(l_m(0), l_m(1), l_m(2));
-
-            double d = (plane_o).ddot(normal_plane); // (plane_o - lo).ddot(normal_plane)
-            d /= l.ddot(normal_plane);
-            
-            std::cout << "Pt " << i << std::endl;
-            std::cout << pt << std::endl;
-            std::cout << d << std::endl;
-            std::cout << l << std::endl;
-            l = l * d;
-            std::cout << l << std::endl;
-
-            res.push_back(l);
-        }
-
-        return res;
+    void clearMarkers() {
+        marker_center_pts.clear();
+        marker_pose_pts.clear();
     }
 
     void markers_img_callback(const campero_ur10_msgs::ArucoMarkersImg& msg) {
@@ -341,68 +353,45 @@ public:
             return;
         }
         
-        
+        static tf::TransformBroadcaster br;
         ros::Time t_current = ros::Time::now();
         cv_bridge::CvImagePtr cv_ptr;
         try {
             cv_ptr = cv_bridge::toCvCopy(msg.img, sensor_msgs::image_encodings::BGR8);
             cv::Mat img = cv_ptr->image;
 
-            //campero_ur10_msgs::ArucoMarkerArray markers = msg.markers;
+            clearMarkers();
+
             std::vector<campero_ur10_msgs::ArucoMarker> markers = msg.markers.markers;
+
+            getMarkersParameters(markers);
             
             cv::Mat img_correct = img.clone();
             correctImage(markers, img_correct);
-
-            cv::Point pt = test(img, img_correct);
-            if (pt.x == -1) {
-                ROS_WARN("Test failed");
-            } else {
-                calculateMatrix(markers);
-                cv::Point2f c = getMarkerCenter(markers[0]);
-                cv::Point pt2(c.x, c.y);
-                std::vector<cv::Point> pts{pt, pt2};
-                std::vector<cv::Point3f> pts_w = pts2Camera(pts);
-
-                geometry_msgs::Pose p = markers[0].pose;
-                int i = 0;
-                for (auto &pt_w : pts_w) {
-                    p.position.x = pt_w.x;
-                    p.position.y = pt_w.y;
-                    p.position.z = pt_w.z;
-                    tf::Transform transform;
-                    tf::poseMsgToTF(p, transform);
-                    tf::StampedTransform stampedTransform(transform, t_current,
-                                                    "camera_color_optical_frame", "pt_board_" + std::to_string(i));
-                    br.sendTransform(stampedTransform);
-                    i++;
-                }
-                // 1.Obtener 4 puntos esquinas imagen
-                // 2.Obtener 4 puntos esquinas imagen
-                // 3.obtener de la camara -> camaraMatrix y distMatrix
-                
-                /*geometry_msgs::Pose p = markers[0].pose;
-                tf::Transform world_ref;
-                tf::poseMsgToTF(p, world_ref);
-                
-                geometry_msgs::Vector3 v;
-                tf::vector3TFToMsg(world_ref.getOrigin(),v);
-                std::cout << v << std::endl;
-                std::cout << p << std::endl;
-
-                
-                tf::Vector3 t = world_ref * world_ref.getOrigin();
-                tf::vector3TFToMsg(t,v);
-                tf::Quaternion q = world_ref.getRotation();
-                tf::Matrix3x3 m(q);
-
-                double r, p, y;
-                m.getRPY(r,p,y);
-
-                cv::Mat rvec = (cv::Mat_<double>(1,3))
-                std::cout << v << std::endl;*/
+            
+            num_it++;
+            valid_matrix_pnp = calculateTranformParam();
+            if (!valid_matrix_pnp) {
+                ROS_WARN("Error calculando parametros(%d/%d)", (++num_errors), num_it);
+                return;
             }
             
+            std::vector<cv::Point> pts = test(img, img_correct);
+            std::vector<cv::Point3f> pts_w = pts2Camera(pts);
+
+            geometry_msgs::Pose p = markers[0].pose;
+            int i = 0;
+            for (auto &pt_w : pts_w) {
+                p.position.x = pt_w.x;
+                p.position.y = pt_w.y;
+                p.position.z = pt_w.z;
+                tf::Transform transform;
+                tf::poseMsgToTF(p, transform);
+                tf::StampedTransform stampedTransform(transform, t_current,
+                                                "camera_color_optical_frame", "pt_board_" + std::to_string(i));
+                br.sendTransform(stampedTransform);
+                i++;
+            }
 
             // Publish Result Image
             if (image_res_pub.getNumSubscribers() > 0) {
@@ -441,9 +430,6 @@ public:
 
         for(int i=0; i<4; ++i)
             distortionEffect.at<double>(i, 0) = 0;
-
-        //cameraMatrix.convertTo(cameraMatrix, CV_32FC1);
-        //distortionEffect.convertTo(distortionEffect, CV_32FC1);
 
         cam_info_received = true;
         cam_info_sub.shutdown();
