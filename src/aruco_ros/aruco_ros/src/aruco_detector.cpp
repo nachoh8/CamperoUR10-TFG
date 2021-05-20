@@ -194,17 +194,17 @@ public:
           tf::StampedTransform cameraToReference;
           cameraToReference.setIdentity();
 
-          if ( reference_frame != camera_frame )
+          /*if ( reference_frame != camera_frame )
           {
             getTransform(reference_frame,
                           camera_frame,
                           cameraToReference);
-          }
+          }*/
 
-          transform = 
-            static_cast<tf::Transform>(cameraToReference) 
-            * static_cast<tf::Transform>(rightToLeft) 
-            * transform;
+          /*transform = 
+            //static_cast<tf::Transform>(cameraToReference) 
+              static_cast<tf::Transform>(rightToLeft) 
+            * transform;*/
 
           std::string marker_frame_final = marker_frame + "_" + std::to_string(markers[i].id);
           tf::StampedTransform stampedTransform(transform, curr_stamp,
@@ -214,6 +214,9 @@ public:
           // 2.Build ArucoMarker msg and Add to ArucoMarkerArray msg
           campero_ur10_msgs::ArucoMarker marker_msg;
           tf::poseTFToMsg(transform, marker_msg.pose);
+
+          /*std::cout << markers[i].id << std::endl;
+          std::cout << marker_msg.pose << std::endl;*/
           
           for (int j = 0; j < markers[i].size(); j++) {
             geometry_msgs::Point32 pt;
