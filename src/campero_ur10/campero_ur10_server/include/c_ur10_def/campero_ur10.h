@@ -38,6 +38,7 @@ private:
 
     // Draw Board parameters
     double z_pen_down = -1.0, z_pen_up = -1.0, correct_x = -1.0, correct_y = -1.0, board_min_x = -1.0, board_min_y = -1.0, board_z = BOARD_Z_DEFAULT, w_board = -1.0, h_board = -1.0;
+    bool real_pts = false;
 
     bool draw_okey = false;
 
@@ -95,6 +96,8 @@ public:
     void processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints);
 
     void callbackDraw(const campero_ur10_msgs::ImageDraw image);
+
+    void callbackDrawGlobal(const geometry_msgs::PoseArray image);
 
     void callbackMoveOp(const campero_ur10_msgs::MoveOp operation);
 

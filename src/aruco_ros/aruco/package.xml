@@ -11,7 +11,8 @@
   <url type="website">http://www.uco.es/investiga/grupos/ava/node/26</url>
   <author email="rmsalinas@uco.es">Rafael Muñoz Salinas</author>
   <author email="bence.magyar@pal-robotics.com">Bence Magyar</author>
-
+	
+  <depend>dynamic_reconfigure</depend>
   <buildtool_depend>catkin</buildtool_depend>
   <depend>cv_bridge</depend>
 </package>

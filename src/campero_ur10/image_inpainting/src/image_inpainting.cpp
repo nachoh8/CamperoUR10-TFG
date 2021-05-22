@@ -6,6 +6,8 @@
 
 #include <eigen3/Eigen/Geometry>
 
+#include <geometry_msgs/PoseArray.h>
+
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
@@ -26,6 +28,7 @@
 #include <campero_ur10_msgs/ArucoMarkerArray.h>
 #include <campero_ur10_msgs/ArucoMarkersImg.h>
 
+#define TOPIC_NAME_IMG_DRAW "image_points"
 
 static const std::string NODE_NAME = "image_inpainting";
 
@@ -35,7 +38,7 @@ class ImageInpainting
 {
 private:
     int num_errors = 0, num_it = 0;
-
+	bool send = false;
     /// Ros
     ros::NodeHandle nh;
     image_transport::ImageTransport it;
@@ -43,7 +46,9 @@ private:
 
     std::string camera_frame , cam_ref_frame, robot_frame;
     tf::StampedTransform rightToLeft;
-
+	
+	ros::Publisher img_pts_pub;
+	
     // aruco markers and image
     ros::Subscriber markers_img_sub;
 
@@ -84,6 +89,8 @@ public:
         image_res_pub = it.advertise("/" + NODE_NAME + "/image_res", 1);
         markers_img_sub = nh.subscribe("/aruco_detector/markers_img", 1, &ImageInpainting::markers_img_callback, this);
         cam_info_sub = nh.subscribe("/camera/color/camera_info", 1, &ImageInpainting::cam_info_callback, this);
+        
+        img_pts_pub = nh.advertise<geometry_msgs::PoseArray>(TOPIC_NAME_IMG_DRAW, 1);
 
         nh.param<std::string>("/" + NODE_NAME + "/cam_ref_frame", cam_ref_frame, "");
         nh.param<std::string>("/" + NODE_NAME + "/camera_frame", camera_frame, "");
@@ -236,7 +243,10 @@ public:
         std::vector<cv::Vec3f> circles;
         cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, gray.rows/16, 100, 30, 1, 30);
 
-        //if (circles.empty()) return cv::Point(-1,-1);
+        if (circles.empty()) {
+			std::vector<cv::Point> res;
+			return res;
+		 }
          
         // cogemos el primero
         cv::Vec3i c = circles[0];
@@ -265,7 +275,7 @@ public:
             // Warped image
             cv::Point pt(marker_center_pts[i].x, marker_center_pts[i].y);
             cv::drawMarker(img_correct, pt, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 3);
-            res.push_back(pt);
+            //res.push_back(pt);
             
             // Original image
             center_o = H_to_Orig(pt);
@@ -335,7 +345,6 @@ public:
                 return false;
             }
         }
-
         z_markers_const /= marker_pose_pts.size();
 
         return true;
@@ -362,7 +371,8 @@ public:
     void ptsCam2World(const std::vector<cv::Point3f>& pts_cam, const geometry_msgs::Pose& pose_base, const tf::Transform& transform_base) {
         ros::Time t_current = ros::Time::now();
         static tf::TransformBroadcaster br;
-
+		
+		geometry_msgs::PoseArray poses;
         geometry_msgs::Pose p = pose_base;
         int i = 0;
         for (auto &pt : pts_cam) {
@@ -370,13 +380,23 @@ public:
             p.position.y = pt.y;
             p.position.z = pt.z;
             tf::Transform transform;
+            
+ 
             tf::poseMsgToTF(p, transform);
             transform = transform_base * transform;
+            geometry_msgs::Pose pose;
+            tf::poseTFToMsg(transform, pose);
+            poses.poses.push_back(pose);
             tf::StampedTransform stampedTransform(transform, t_current,
-                                            cam_ref_frame, "pt_board_" + std::to_string(i));
+                                            robot_frame, "pt_board_" + std::to_string(i));
             br.sendTransform(stampedTransform);
             i++;
         }
+        
+        if (!poses.poses.empty() && !send) {
+			send = true;
+			img_pts_pub.publish(poses);
+		}
     }
 
     void clearMarkers() {
@@ -467,10 +487,9 @@ public:
             
             std::vector<cv::Point> pts_img = test(img, img_correct);
             std::vector<cv::Point3f> pts_cam = pts2Camera(pts_img);
-
+			
             ptsCam2World(pts_cam, markers[TOP_LEFT_IDX].pose, transform_base);
             
-
             // Publish Result Image
             if (image_res_pub.getNumSubscribers() > 0) {
                 cv_bridge::CvImage out_msg;
@@ -486,6 +505,7 @@ public:
                 out_msg.image = img_correct;
                 image_debug_pub.publish(out_msg.toImageMsg());
             }
+            
         }
         catch (cv_bridge::Exception& e)
         {

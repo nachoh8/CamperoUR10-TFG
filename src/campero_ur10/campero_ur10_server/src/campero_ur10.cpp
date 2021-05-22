@@ -34,6 +34,8 @@ namespace rvt = rviz_visual_tools;
 #define FIELD_Z_PEN_UP "#Z_PEN_UP"
 #define FIELD_CORRECT_X "#CORRECT_X"
 #define FIELD_CORRECT_Y "#CORRECT_Y"
+#define FIELD_REAL_PTS "#REAL_PTS"
+#define FIELD_BOARD_PTS "#BOARD_PTS"
 
 CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori) {
     init(_mode);
@@ -126,6 +128,12 @@ bool CamperoUR10::loadDrawConfig(std::string& file) {
         } else if (line.compare(FIELD_CORRECT_Y) == 0) {
             fin >> _correct_y;
             n_param++;
+            
+        } else if (line.compare(FIELD_REAL_PTS) == 0) {
+            real_pts = true;
+            
+        } else if (line.compare(FIELD_BOARD_PTS) == 0) {
+            real_pts = false;
             
         }
     }
@@ -358,9 +366,48 @@ bool CamperoUR10::addOriConstraint() {
     return true;
 }
 
-
 moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
     return move_group;
+}
+
+void CamperoUR10::callbackDrawGlobal(const geometry_msgs::PoseArray image) {
+    if (!draw_okey) {
+        ROS_INFO("WARNING: configuracion dibujar incompleta");
+        return;
+    }
+
+    ROS_INFO("Image received: %d traces", image.poses.size());
+    
+	geometry_msgs::Pose target = move_group.getCurrentPose().pose;
+    std::vector<geometry_msgs::Pose> waypoints;
+    
+    // go to first point with pen up
+    target.position.y = image.poses[0].position.y + correct_x;
+    target.position.x = image.poses[0].position.x + correct_y;
+    target.position.z = image.poses[0].position.z + 0.3;
+    waypoints.push_back(target);
+    
+	//target.position.z = z_pen_up;//image.poses[0].position.z;
+    for (int i = 0; i < image.poses.size(); i++) {
+		std::cout << image.poses[0] << std::endl;
+        target.position.y = image.poses[0].position.y + correct_y;
+		target.position.x = image.poses[0].position.x + correct_x;
+		target.position.z = image.poses[0].position.z + 0.3;
+        waypoints.push_back(target);
+    }
+    
+    // plan & execute
+    plan_exec_Carthesian(waypoints);
+    /*if (plan_exec_Carthesian(waypoints)) {
+        // go to ready draw posiyion
+        ROS_INFO("Move to ready position");
+
+        //move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
+
+        //plan_execute();
+    }*/
+    
+    ROS_INFO("Callback end");
 }
 
 void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints) {
@@ -541,8 +588,12 @@ void CamperoUR10::main() {
             
             // go ready draw position
             if (!goReadyDraw()) return;
-
-            sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
+			
+			if (real_pts) {
+				sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDrawGlobal, this);
+			} else {
+				sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
+			}
         }
         break;
 

@@ -45,7 +45,8 @@ private:
   bool cam_info_received;
   
   image_transport::Publisher image_detector_pub;
-
+  ros::Publisher markers_pose_pub;
+  
   // Cuano encuentra 4 marcas publica las marcas y la imagen original
   // image_transport::Publisher image_res_pub;
   ros::Publisher markers_pub;
@@ -103,6 +104,7 @@ public:
     //image_res_pub = it.advertise("result", 1);
     //markers_pub = nh.advertise<campero_ur10_msgs::ArucoMarkerArray>("markers", 100);
     markers_pub = nh.advertise<campero_ur10_msgs::ArucoMarkersImg>("markers_img", 1);
+    markers_pose_pub = nh.advertise<campero_ur10_msgs::ArucoMarkerArray>("markers_pose", 1);
 
     nh.param<double>("marker_size", marker_size, 0.05);
     nh.param<std::string>("reference_frame", reference_frame, "");
@@ -162,7 +164,8 @@ public:
   void image_callback(const sensor_msgs::ImageConstPtr& msg)
   {
     if ((image_detector_pub.getNumSubscribers() == 0) &&
-        (markers_pub.getNumSubscribers() == 0))
+        (markers_pub.getNumSubscribers() == 0) &&
+        (markers_pose_pub.getNumSubscribers() == 0))
     {
       ROS_INFO("No subscribers, not looking for aruco markers");
       return;
@@ -241,9 +244,10 @@ public:
           marker_pts.push_back(markers[i]);
         }
 
+		    markers_pose_pub.publish(marker_array.markers);
         
         // Num Markers is correct
-        if (markers.size() == 4) {
+        if (markers.size() == 4 && markers_pub.getNumSubscribers() > 0) {
           /*cv::Mat image_res = cv_ptr->image;
           correctImage(marker_pts, image_res);*/
 

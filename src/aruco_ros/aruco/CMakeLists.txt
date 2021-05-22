@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(aruco)
 
-find_package(catkin)
+#find_package(catkin)
 
 find_package(OpenCV 3 REQUIRED)
+
+find_package(catkin REQUIRED COMPONENTS
+  dynamic_reconfigure
+)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -26,7 +30,8 @@ add_library(aruco
   src/aruco/markerdetector.cpp
 )
 target_link_libraries(aruco
-  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES}
+)
 
 add_executable(optimalmarkers
   src/aruco/aruco_selectoptimalmarkers.cpp)
