@@ -34,15 +34,13 @@ namespace rvt = rviz_visual_tools;
 #define FIELD_Z_PEN_UP "#Z_PEN_UP"
 #define FIELD_CORRECT_X "#CORRECT_X"
 #define FIELD_CORRECT_Y "#CORRECT_Y"
-#define FIELD_REAL_PTS "#REAL_PTS"
-#define FIELD_BOARD_PTS "#BOARD_PTS"
+#define FIELD_CORRECT_Z "#CORRECT_Z"
 
 CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori) {
     init(_mode);
     
     add_ori = _add_ori;
 
-    //if (!config_file.empty()) loadDrawConfig(config_file);
     loadConfig(config_file);
 }
 
@@ -84,7 +82,7 @@ bool CamperoUR10::loadDrawConfig(std::string& file) {
     fin.open(file, std::ios::in);
 
     double _z_pen_down = -1.0, _z_pen_up = -1.0;
-    double _correct_x = -1.0, _correct_y = -1.0;
+    double _correct_x = -1.0, _correct_y = -1.0, _correct_z = -1.0;
     double _board_x = -1.0, _board_y = -1.0, _board_z = BOARD_Z_DEFAULT;
     double _w_board = -1.0, _h_board = -1.0;
     
@@ -129,25 +127,26 @@ bool CamperoUR10::loadDrawConfig(std::string& file) {
             fin >> _correct_y;
             n_param++;
             
-        } else if (line.compare(FIELD_REAL_PTS) == 0) {
-            real_pts = true;
-            
-        } else if (line.compare(FIELD_BOARD_PTS) == 0) {
-            real_pts = false;
+        } else if (line.compare(FIELD_CORRECT_Z) == 0) {
+            fin >> _correct_z;
+            n_param++;
             
         }
     }
 
     fin.close();
 
-    //bool _draw_okey = !(_z_pen_down == -1 || _z_pen_up == -1 || _correct_y == -1 || _correct_x == -1 || _w_board <= 0 || _h_board <= 0 || _board_x == -1 || _board_y == -1);
-    bool _draw_okey = !(n_param < 8 || _w_board <= 0 || _h_board <= 0);
+    bool _draw_okey = !(_z_pen_down == -1 || _z_pen_up == -1 ||
+                        _correct_y == -1 || _correct_x == -1 ||_correct_z == -1 ||
+                        _w_board <= 0 || _h_board <= 0 ||
+                        _board_x == -1 || _board_y == -1 || _board_z == -1);
 
     if (_draw_okey) {
         z_pen_down = _z_pen_down;
         z_pen_up = _z_pen_up;
         correct_x = _correct_x;
         correct_y = _correct_y;
+        correct_z = _correct_z;
         
         board_min_x = _board_x;
         board_min_y = _board_y;
@@ -166,7 +165,7 @@ bool CamperoUR10::loadDrawConfig(std::string& file) {
 void CamperoUR10::printDrawConfig() {
     ROS_INFO("----Draw Config----");
     if (!draw_okey) {
-        ROS_INFO("Error: configuracion no valida");
+        ROS_WARN("Error: configuracion no valida");
     }
 
     ROS_INFO("--Pen:");
@@ -203,7 +202,6 @@ void CamperoUR10::loadConfig(std::string& file) {
         }
     }
 }
-
 
 void CamperoUR10::deleteMarkers(bool keep_visual_refs) {
     visual_tools.deleteAllMarkers();
@@ -254,9 +252,9 @@ double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) 
     // Show plan
     deleteMarkers();
     visual_tools.publishPath(waypoints, rviz_visual_tools::LIME_GREEN, rviz_visual_tools::SMALL);
-    /*for (std::size_t i = 0; i < waypoints.size(); ++i)
+    for (std::size_t i = 0; i < waypoints.size(); ++i)
         visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rviz_visual_tools::SMALL);
-    */visual_tools.trigger();
+    visual_tools.trigger();
 
 
     // Apply Plan
@@ -370,44 +368,26 @@ moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
     return move_group;
 }
 
-void CamperoUR10::callbackDrawGlobal(const geometry_msgs::PoseArray image) {
-    if (!draw_okey) {
-        ROS_INFO("WARNING: configuracion dibujar incompleta");
-        return;
-    }
-
-    ROS_INFO("Image received: %d traces", image.poses.size());
+void CamperoUR10::processRealTrace(const campero_ur10_msgs::ImgTrace trace, std::vector<geometry_msgs::Pose>& waypoints) {
+    ROS_INFO("Trace: %d points", trace.points.size());
     
 	geometry_msgs::Pose target = move_group.getCurrentPose().pose;
-    std::vector<geometry_msgs::Pose> waypoints;
     
     // go to first point with pen up
-    target.position.y = image.poses[0].position.y + correct_x;
-    target.position.x = image.poses[0].position.x + correct_y;
-    target.position.z = image.poses[0].position.z + 0.3;
+    target.position.y = trace.points[0].y + correct_y;
+    target.position.x = trace.points[0].x + correct_x;
+    target.position.z = z_pen_up;
     waypoints.push_back(target);
-    
-	//target.position.z = z_pen_up;//image.poses[0].position.z;
-    for (int i = 0; i < image.poses.size(); i++) {
-		std::cout << image.poses[0] << std::endl;
-        target.position.y = image.poses[0].position.y + correct_y;
-		target.position.x = image.poses[0].position.x + correct_x;
-		target.position.z = image.poses[0].position.z + 0.3;
+
+    for (int i = 0; i < trace.points.size(); i++) {
+        target.position.y = trace.points[i].y + correct_y;
+		target.position.x = trace.points[i].x + correct_x;
+		target.position.z = trace.points[i].z + correct_z;
         waypoints.push_back(target);
     }
     
-    // plan & execute
-    plan_exec_Carthesian(waypoints);
-    /*if (plan_exec_Carthesian(waypoints)) {
-        // go to ready draw posiyion
-        ROS_INFO("Move to ready position");
-
-        //move_group.setNamedTarget(C_UR10_POSE_READY_DRAW_PEN);
-
-        //plan_execute();
-    }*/
-    
-    ROS_INFO("Callback end");
+    target.position.z = z_pen_up;
+    waypoints.push_back(target);
 }
 
 void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints) {
@@ -436,19 +416,38 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
 
 void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     if (!draw_okey) {
-        ROS_INFO("WARNING: configuracion dibujar incompleta");
+        ROS_WARN("WARNING: configuracion dibujar incompleta");
         return;
     }
 
     ROS_INFO("Image received: %d traces", image.traces.size());
     
-    const double w_div = w_board / image.W;
-    const double h_div = h_board / image.H;
+    bool _real_pts = image.W == -1 && image.H == -1;
 
     std::vector<geometry_msgs::Pose> waypoints;
 
-    for (int i = 0; i < image.traces.size(); i++) {
-        processTrace(image.traces[i], w_div, h_div, waypoints);
+    if (_real_pts) {
+        ROS_INFO("Process Real Points");
+        
+        for (int i = 0; i < image.traces.size(); i++) {
+            processRealTrace(image.traces[i], waypoints);
+        }
+
+    } else {
+        ROS_INFO("Process Virtual Board Points");
+        if (image.W <= 0 || image.H <= 0) {
+            ROS_WARN("Virtual Board Size invalid: %dx%d", image.W, image.H);
+            return;
+        }
+
+        const double w_div = w_board / image.W;
+        const double h_div = h_board / image.H;
+
+        std::vector<geometry_msgs::Pose> waypoints;
+
+        for (int i = 0; i < image.traces.size(); i++) {
+            processTrace(image.traces[i], w_div, h_div, waypoints);
+        }
     }
     
     // plan & execute
@@ -589,11 +588,7 @@ void CamperoUR10::main() {
             // go ready draw position
             if (!goReadyDraw()) return;
 			
-			if (real_pts) {
-				sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDrawGlobal, this);
-			} else {
-				sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
-			}
+			sub = nh.subscribe(TOPIC_NAME_IMG_DRAW, QUEUE_SIZE_IMG_DRAW, &CamperoUR10::callbackDraw, this);
         }
         break;
 

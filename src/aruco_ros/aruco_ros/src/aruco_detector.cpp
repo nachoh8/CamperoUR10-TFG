@@ -163,120 +163,122 @@ public:
 
   void image_callback(const sensor_msgs::ImageConstPtr& msg)
   {
+    if (!cam_info_received) {
+      ROS_WARN("Camera info not received");
+      return;
+    }
     if ((image_detector_pub.getNumSubscribers() == 0) &&
         (markers_pub.getNumSubscribers() == 0) &&
         (markers_pose_pub.getNumSubscribers() == 0))
     {
-      ROS_INFO("No subscribers, not looking for aruco markers");
+      // ROS_INFO("No subscribers, not looking for aruco markers");
       return;
     }
 
     static tf::TransformBroadcaster br;
-    if(cam_info_received)
-    {
-      ros::Time curr_stamp = msg->header.stamp;
-      cv_bridge::CvImagePtr cv_ptr;
-      try {
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::RGB8);
-        cv::Mat image_detector = cv_ptr->image.clone(); // image with markers
+    ros::Time curr_stamp = msg->header.stamp;
+    
+    cv_bridge::CvImagePtr cv_ptr;
+    try {
+      cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::RGB8);
+      cv::Mat image_detector = cv_ptr->image.clone(); // image with markers
 
-        // Detect Markers
-        std::vector<Marker> markers;
-        mDetector.detect(image_detector, markers, camParam, marker_size, false);
+      // Detect Markers
+      std::vector<Marker> markers;
+      mDetector.detect(image_detector, markers, camParam, marker_size, false);
 
-        // Init ArucoMarkersImg msg
-        campero_ur10_msgs::ArucoMarkersImg marker_array;
+      // Init ArucoMarkersImg msg
+      campero_ur10_msgs::ArucoMarkersImg marker_array;
 
-        // Point Set of Marker Points
-        std::vector< std::vector<cv::Point2f> > marker_pts;
+      // Point Set of Marker Points
+      std::vector< std::vector<cv::Point2f> > marker_pts;
 
-        // for each marker, draw info and its boundaries in the image
-        for (size_t i = 0; i < markers.size(); ++i) {
-          // 1.Get marker transform
-          tf::Transform transform = aruco_ros::arucoMarker2Tf(markers[i], rotate_marker_axis_);
-          tf::StampedTransform cameraToReference;
-          cameraToReference.setIdentity();
+      // for each marker, draw info and its boundaries in the image
+      for (size_t i = 0; i < markers.size(); ++i) {
+        // 1.Get marker transform
+        tf::Transform transform = aruco_ros::arucoMarker2Tf(markers[i], rotate_marker_axis_);
+        tf::StampedTransform cameraToReference;
+        cameraToReference.setIdentity();
 
-          /*if ( reference_frame != camera_frame )
-          {
-            getTransform(reference_frame,
-                          camera_frame,
-                          cameraToReference);
-          }*/
+        /*if ( reference_frame != camera_frame )
+        {
+          getTransform(reference_frame,
+                        camera_frame,
+                        cameraToReference);
+        }*/
 
-          /*transform = 
-            //static_cast<tf::Transform>(cameraToReference) 
-              static_cast<tf::Transform>(rightToLeft) 
-            * transform;*/
+        /*transform = 
+          //static_cast<tf::Transform>(cameraToReference) 
+            static_cast<tf::Transform>(rightToLeft) 
+          * transform;*/
 
-          std::string marker_frame_final = marker_frame + "_" + std::to_string(markers[i].id);
-          tf::StampedTransform stampedTransform(transform, curr_stamp,
-                                                reference_frame, marker_frame_final);
-          br.sendTransform(stampedTransform);
-          
-          // 2.Build ArucoMarker msg and Add to ArucoMarkerArray msg
-          campero_ur10_msgs::ArucoMarker marker_msg;
-          tf::poseTFToMsg(transform, marker_msg.pose);
-
-          /*std::cout << markers[i].id << std::endl;
-          std::cout << marker_msg.pose << std::endl;*/
-          
-          for (int j = 0; j < markers[i].size(); j++) {
-            geometry_msgs::Point32 pt;
-            pt.x = markers[i][j].x;
-            pt.y = markers[i][j].y;
-            marker_msg.img_points.push_back(pt);
-          }
-          marker_msg.id = markers[i].id;
-
-          
-          marker_array.markers.markers.push_back(marker_msg);
-
-          // 3.Draw Marker on image
-          markers[i].draw(image_detector,cv::Scalar(0,0,255),2);
-
-          // 4.Draw a 3d cube if there is 3d info
-          if (camParam.isValid() && marker_size > 0) {
-            CvDrawingUtils::draw3dAxis(image_detector, markers[i], camParam);
-          }
-
-          // 5.Add Marker Image Points to Point Set
-          marker_pts.push_back(markers[i]);
-        }
-
-		    markers_pose_pub.publish(marker_array.markers);
+        std::string marker_frame_final = marker_frame + "_" + std::to_string(markers[i].id);
+        tf::StampedTransform stampedTransform(transform, curr_stamp,
+                                              reference_frame, marker_frame_final);
+        br.sendTransform(stampedTransform);
         
-        // Num Markers is correct
-        if (markers.size() == 4 && markers_pub.getNumSubscribers() > 0) {
-          /*cv::Mat image_res = cv_ptr->image;
-          correctImage(marker_pts, image_res);*/
+        // 2.Build ArucoMarker msg and Add to ArucoMarkerArray msg
+        campero_ur10_msgs::ArucoMarker marker_msg;
+        tf::poseTFToMsg(transform, marker_msg.pose);
 
-          // Publish ArucoMarkerArray with Original Image
-          marker_array.img = *(cv_ptr->toImageMsg());
-          markers_pub.publish(marker_array);
+        /*std::cout << markers[i].id << std::endl;
+        std::cout << marker_msg.pose << std::endl;*/
+        
+        for (int j = 0; j < markers[i].size(); j++) {
+          geometry_msgs::Point32 pt;
+          pt.x = markers[i][j].x;
+          pt.y = markers[i][j].y;
+          marker_msg.img_points.push_back(pt);
+        }
+        marker_msg.id = markers[i].id;
 
-          // Publish Original Image
-          /*cv_bridge::CvImage out_msg;
-          out_msg.header.stamp = curr_stamp;
-          out_msg.encoding = sensor_msgs::image_encodings::RGB8;
-          out_msg.image = cv_ptr->image;
-          image_res_pub.publish(out_msg.toImageMsg());*/
+        
+        marker_array.markers.markers.push_back(marker_msg);
+
+        // 3.Draw Marker on image
+        markers[i].draw(image_detector,cv::Scalar(0,0,255),2);
+
+        // 4.Draw a 3d cube if there is 3d info
+        if (camParam.isValid() && marker_size > 0) {
+          CvDrawingUtils::draw3dAxis(image_detector, markers[i], camParam);
         }
 
-        // Publish Image
-        if (image_detector_pub.getNumSubscribers() > 0) {
-          cv_bridge::CvImage out_msg;
-          out_msg.header.stamp = curr_stamp;
-          out_msg.encoding = sensor_msgs::image_encodings::RGB8;
-          out_msg.image = image_detector;
-          image_detector_pub.publish(out_msg.toImageMsg());
-        }
+        // 5.Add Marker Image Points to Point Set
+        marker_pts.push_back(markers[i]);
       }
-      catch (cv_bridge::Exception& e)
-      {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
+
+      markers_pose_pub.publish(marker_array.markers);
+      
+      // Num Markers is correct
+      if (markers.size() == 4 && markers_pub.getNumSubscribers() > 0) {
+        /*cv::Mat image_res = cv_ptr->image;
+        correctImage(marker_pts, image_res);*/
+
+        // Publish ArucoMarkerArray with Original Image
+        marker_array.img = *(cv_ptr->toImageMsg());
+        markers_pub.publish(marker_array);
+
+        // Publish Original Image
+        /*cv_bridge::CvImage out_msg;
+        out_msg.header.stamp = curr_stamp;
+        out_msg.encoding = sensor_msgs::image_encodings::RGB8;
+        out_msg.image = cv_ptr->image;
+        image_res_pub.publish(out_msg.toImageMsg());*/
       }
+
+      // Publish Image
+      if (image_detector_pub.getNumSubscribers() > 0) {
+        cv_bridge::CvImage out_msg;
+        out_msg.header.stamp = curr_stamp;
+        out_msg.encoding = sensor_msgs::image_encodings::RGB8;
+        out_msg.image = image_detector;
+        image_detector_pub.publish(out_msg.toImageMsg());
+      }
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return;
     }
   }
 
@@ -296,6 +298,8 @@ public:
 
     cam_info_received = true;
     cam_info_sub.shutdown();
+
+    ROS_INFO("Camera Info received");
   }
 
   void reconf_callback(aruco_ros::ArucoThresholdConfig &config, uint32_t level)
