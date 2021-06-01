@@ -1,14 +1,14 @@
 <launch>
   <arg name="cam_frame" default="camera_color_optical_frame"/>
-  <arg name="cam_ref_frame" default="base_link"/>
-  <arg name="robot_frame" default="base_link"/>
+  <arg name="cam_ref_frame" default="campero_base_footprint"/>
+  <arg name="robot_frame" default="campero_base_footprint"/>
   <arg name="max_dist_error" default="7"/> <!-- distancia de error maximo en pixeles entre el punto real y el punto en la img-->
 
   <node name="image_inpainting" pkg="image_inpainting"
       type="image_inpainting" respawn="false"
       output="screen">
       <param name="camera_frame"       value="$(arg cam_frame)"/>
-      <param name="cam_ref_frame"    value="$(arg cam_ref_frame)"/>
+      <param name="cam_ref_frame"    value="$(arg robot_frame)"/>
       <param name="robot_frame"       value="$(arg robot_frame)"/>
       <param name="max_dist_error"       value="$(arg max_dist_error)"/>
   </node>

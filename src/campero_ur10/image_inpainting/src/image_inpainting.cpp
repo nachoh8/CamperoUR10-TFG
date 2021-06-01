@@ -54,6 +54,7 @@ private:
 	
     // aruco markers and image
     ros::Subscriber markers_img_sub;
+    std::vector<campero_ur10_msgs::ArucoMarker> markers;
 
     // Camera Info
     bool cam_info_received = false;
@@ -153,7 +154,7 @@ public:
         return cent;
     }
     
-    void orderMarkers(const std::vector<campero_ur10_msgs::ArucoMarker>& markers) {
+    void orderMarkers() {
         const int len = markers.size();
 
         std::vector< std::pair<double, int> > sum_v(len);
@@ -178,7 +179,6 @@ public:
     
     void filterRectPoints(std::vector<cv::Point2f>& pts, std::vector<cv::Point2f>& res) {
         const int len = pts.size();
-        if (len == 4) return;
 
         std::vector< std::pair<double, int> > sum_v(len);
         std::vector< std::pair<double, int> > diff_v(len);
@@ -200,7 +200,7 @@ public:
         res.push_back(pts[diff_v[diff_v.size()-1].second]);
     }
 
-    void correctImage(const std::vector<campero_ur10_msgs::ArucoMarker>& markers, cv::Mat& image) {
+    void correctImage(cv::Mat& image) {
         
         // Cast to cv::Point/2f type
         std::vector< std::vector<cv::Point> > pts(markers.size());
@@ -211,10 +211,10 @@ public:
                 pts_f.push_back(cv::Point2f(markers[i].img_points[j].x, markers[i].img_points[j].y));
             }
         }
-
-        // Delete Markers
-        cv::fillPoly(image, pts, cv::Scalar(255,255,255));
         
+        // Delete Markers
+        cv::drawContours(image, pts, -1, cv::Scalar(255,255,255), -1);
+
         // Get Corner Source points
         std::vector<cv::Point2f> src_pts;
         filterRectPoints(pts_f, src_pts);
@@ -249,6 +249,38 @@ public:
             marker_center_pts.push_back(center);
             // cv::circle( image, center, 5, cv::Scalar(0,0,255), 3, cv::LINE_AA);
         }
+
+        /*cv::Mat gray, blurImage, edge1, edge2, cedge;
+        cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY );
+        cv::blur(gray, blurImage, cv::Size(3,3));
+
+        cv::Canny( blurImage, edge1, 100, 300, 3);
+
+        cedge = cv::Scalar::all(0);
+        image.copyTo(cedge, edge1);
+
+        cv::Mat dx,dy;
+        cv::Scharr(blurImage,dx,CV_16S,1,0);
+        cv::Scharr(blurImage,dy,CV_16S,0,1);
+        cv::Canny( dx,dy, edge2, 400, 1200 );
+        cedge = cv::Scalar::all(0);
+        image.copyTo(cedge, edge2);
+        
+        // Delete Markers
+        //cv::fillPoly(image, pts, cv::Scalar(255,255,255));
+        //cv::drawContours(image, pts, -1, cv::Scalar(255,255,255), -1);
+        for (int i = 0; i < pts.size(); i++) {
+            for (int j = 0; j < pts[i].size(); j++) {
+                cv::Point pt = Orig_to_H(pts[i][j]);
+                pts[i][j] = pt;
+            }
+        }
+        cv::drawContours(cedge, pts, -1, cv::Scalar(0), -1, cv::LINE_AA);
+
+        cedge.convertTo(image, CV_8UC3);*/
+        /*cv::imshow("r", cedge);
+        cv::waitKey(0);
+        cv::destroyAllWindows();*/
     }
     
     std::vector<cv::Point> test(cv::Mat& img, cv::Mat& img_correct) {
@@ -311,7 +343,7 @@ public:
         cv::medianBlur(gray, gray, 5);
 
         std::vector<cv::Vec3f> circles;
-        cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, gray.rows/16, 100, 30, 1, 30);
+        cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, gray.rows/16, 100, 30, 1, 200);
 
         std::vector<cv::Point> res;
         if (circles.empty()) return res;
@@ -356,9 +388,81 @@ public:
         return res;
     }
 
-    void getMarkersParameters(const std::vector<campero_ur10_msgs::ArucoMarker>& markers) {
+    std::vector< std::vector<cv::Point> > test_pts_contours(cv::Mat& img, cv::Mat& img_correct) {
+        cv::Mat gray, blurImage, res_img;
+		cv::cvtColor(img_correct, gray, cv::COLOR_BGR2GRAY );
+		cv::blur(gray, blurImage, cv::Size(3,3));
+
+		cv::Canny( blurImage, res_img, 100, 300, 3);
         
-        orderMarkers(markers);
+        // Delete Markers
+        std::vector< std::vector<cv::Point> > pts(markers.size());
+        for (int i = 0; i < markers.size(); i++) {
+			std::vector<cv::Point2f> pts_f;
+            for (int j = 0; j < markers[i].img_points.size(); j++) {
+				cv::Point p = Orig_to_H(cv::Point(markers[i].img_points[j].x, markers[i].img_points[j].y));
+                pts_f.push_back(cv::Point2f(p.x, p.y));
+            }
+            // agrandamos la marca
+            std::vector<cv::Point2f> order_pts;
+			filterRectPoints(pts_f, order_pts);
+			cv::Point2f tl = order_pts[0];
+			cv::Point2f tr = order_pts[1];
+			cv::Point2f br = order_pts[2];
+			cv::Point2f bl = order_pts[3];
+			
+			pts[i].push_back(cv::Point(tl.x - 5, tl.y - 5));
+			pts[i].push_back(cv::Point(tr.x + 5, tr.y - 5));
+			pts[i].push_back(cv::Point(br.x + 5, br.y + 5));
+			pts[i].push_back(cv::Point(bl.x - 5, bl.y + 5));
+        }
+        
+        cv::drawContours(res_img, pts, -1, cv::Scalar(0), -1);
+		
+		// Find contours
+		std::vector< std::vector<cv::Point> > contours;
+		std::vector<cv::Vec4i> h;
+		cv::findContours(res_img, contours, h, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+		
+		std::cout << "Num Contours: " << contours.size() << std::endl;
+		cv::imshow("canny", res_img);
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+		// Process Result
+        //std::vector<cv::Point> res;
+		
+		cv::drawContours(img_correct, contours, -1, cv::Scalar(0,0,255), 1);
+
+        for (int i = 0; i < contours.size(); i++) {
+			for (int j = 0; j < contours[i].size(); j++) {
+				// Warped image
+				cv::Point pt(contours[i][j].x, contours[i][j].y);
+				cv::drawMarker(img_correct, pt, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 1);
+				//res.push_back(pt);
+				// Original image
+				pt = H_to_Orig(pt);
+				cv::drawMarker(img, pt, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 1);
+			}
+        }
+
+        for (int i = 0; i < marker_center_pts.size(); i++) {
+            // Warped image
+            cv::Point pt(marker_center_pts[i].x, marker_center_pts[i].y);
+            cv::drawMarker(img_correct, pt, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 2);
+            //res.push_back(pt);
+            // Original image
+            pt = H_to_Orig(pt);
+            cv::drawMarker(img, pt, cv::Scalar(0,0,255), cv::MARKER_CROSS, 20, 2);
+        }
+        
+        //res_img.convertTo(img_correct, img_correct.type());
+
+        return contours;
+    }
+
+    void getMarkersParameters() {
+        
+        orderMarkers();
         
         const int len = markers.size();
 
@@ -410,7 +514,7 @@ public:
                 /*std::cout << "uv: " << uv << " | true_ground: " << marker_center_pts[i] << std::endl;
                 std::cout << "Error: " <<  _error << std::endl;*/
                 valid_matrix_pnp = false;
-                return -1.0;
+                return max_dist_error;
             }
             _error_mean += _error;
         }
@@ -422,54 +526,60 @@ public:
         return _error_mean;
     }
 
-    std::vector<cv::Point3f> pts2Camera(std::vector<cv::Point>& pts) {
+    std::vector< std::vector<cv::Point3f> > pts2Camera(std::vector< std::vector<cv::Point> >& pts) {
         cv::Mat leftSideMat  = rotationMatrix.inv() * cameraMatrix.inv() * z_markers_const;
         cv::Mat rightSideMat = rotationMatrix.inv() * tvec;
         
-        std::vector<cv::Point3f> res;
+        std::vector< std::vector<cv::Point3f> > res(pts.size());
         for (int i = 0; i < pts.size(); i++) {
-            cv::Point pt = pts[i];
+			for (int j = 0; j < pts[i].size(); j++) {
+				cv::Point pt = pts[i][j];
             
-            cv::Mat uvPt = (cv::Mat_<double>(3,1) << pt.x, pt.y, 1);
-            cv::Mat1f pt_m  = leftSideMat * uvPt - rightSideMat;
-            cv::Point3f pt_w(pt_m(0), pt_m(1), pt_m(2));
+				cv::Mat uvPt = (cv::Mat_<double>(3,1) << pt.x, pt.y, 1);
+				cv::Mat1f pt_m  = leftSideMat * uvPt - rightSideMat;
+				cv::Point3f pt_w(pt_m(0), pt_m(1), pt_m(2));
 
-            res.push_back(pt_w);
+				res[i].push_back(pt_w);
+			}
         }
 
         return res;
     }
 
-    void ptsCam2World(const std::vector<cv::Point3f>& pts_cam, const geometry_msgs::Pose& pose_base, const tf::Transform& transform_base) {
+    void ptsCam2World(const std::vector< std::vector<cv::Point3f> >& pts_cam, const geometry_msgs::Pose& pose_base, const tf::Transform& transform_base) {
         geometry_msgs::Pose p = pose_base;
         poses_res.poses.clear();
         img_res_msg.traces.clear();
 
-        campero_ur10_msgs::ImgTrace trace;
-        for (auto &pt : pts_cam) {
-            p.position.x = pt.x;
-            p.position.y = pt.y;
-            p.position.z = pt.z;
-            tf::Transform transform;
-            
- 
-            tf::poseMsgToTF(p, transform);
-            transform = transform_base * transform;
-            geometry_msgs::Pose pose;
-            tf::poseTFToMsg(transform, pose);
-            poses_res.poses.push_back(pose);
-            
-            campero_ur10_msgs::ImgPoint pt_msg;
-            pt_msg.x = pose.position.x;
-            pt_msg.y = pose.position.y;
-            pt_msg.z = pose.position.z;
-            trace.points.push_back(pt_msg);
-        }
+        
+        for (int i = 0; i < pts_cam.size(); i++) {
+			campero_ur10_msgs::ImgTrace trace;
+			for (auto &pt : pts_cam[i]) {
+				p.position.x = pt.x;
+				p.position.y = pt.y;
+				p.position.z = pt.z;
+				tf::Transform transform;
+				
+	 
+				tf::poseMsgToTF(p, transform);
+				transform = transform_base * transform;
+				geometry_msgs::Pose pose;
+				tf::poseTFToMsg(transform, pose);
+				poses_res.poses.push_back(pose);
+				
+				campero_ur10_msgs::ImgPoint pt_msg;
+				pt_msg.x = pose.position.x;
+				pt_msg.y = pose.position.y;
+				pt_msg.z = pose.position.z;
+				trace.points.push_back(pt_msg);
+			}
 
-        img_res_msg.traces.push_back(trace);
+			img_res_msg.traces.push_back(trace);
+		}
     }
 
     void clearMarkers() {
+		markers.clear();
         marker_center_pts.clear();
         marker_pose_pts.clear();
     }
@@ -521,12 +631,12 @@ public:
 
             clearMarkers();
 
-            std::vector<campero_ur10_msgs::ArucoMarker> markers = msg.markers.markers;
+            markers = msg.markers.markers;
 
-            getMarkersParameters(markers);
+            getMarkersParameters();
             
             cv::Mat img_correct = img.clone();
-            correctImage(markers, img_correct);
+            correctImage(img_correct);
             
             
             double _error = calculateTranformParam();
@@ -537,7 +647,7 @@ public:
                 return;
             }
             
-            if (_error > min_dist_error) return;
+            if (_error > min_dist_error && poses_res.poses.size() > 0) return;
 
             // Optical cam to cam ref
             tf::StampedTransform Cam_optToCam_ref;
@@ -557,23 +667,24 @@ public:
                 }
             }
 
-            min_dist_error = _error;
-
-            ROS_INFO("--New best image--");
-            ROS_INFO("Min error: %f ", min_dist_error);
-
             tf::Transform transform_base = static_cast<tf::Transform>(Cam_optToCam_ref)
                                       * static_cast<tf::Transform>(Cam_refToRobot_ref) 
                                       * static_cast<tf::Transform>(rightToLeft);
             
+            std::vector< std::vector<cv::Point> > pts_img = test_pts_contours(img, img_correct);
             
-            // std::vector<cv::Point> pts_img = test(img, img_correct);
-            std::vector<cv::Point> pts_img = test_pts_circulo(img, img_correct);
-            std::vector<cv::Point3f> pts_cam = pts2Camera(pts_img);
+            if (pts_img.empty()) return;
+            
+            std::vector< std::vector<cv::Point3f> > pts_cam = pts2Camera(pts_img);
 			
             ptsCam2World(pts_cam, markers[TOP_LEFT_IDX].pose, transform_base);
             
-            ROS_INFO("Number of points to send: %d ", poses_res.poses.size());
+			min_dist_error = _error;
+			
+			ROS_INFO("--New best image--");
+			ROS_INFO("Min error: %f ", min_dist_error);
+			ROS_INFO("Number of points to send: %d ", poses_res.poses.size());
+			ROS_INFO("Z const: %f ", z_markers_const);
 
             // Publish Result Image
             if (image_res_pub.getNumSubscribers() > 0) {
@@ -632,6 +743,7 @@ public:
         if (cmd == "reset") {
             ROS_INFO("--Command: Image Reset--");
             poses_res.poses.clear();
+            img_res_msg.traces.clear();
             min_dist_error = max_dist_error + 0.1;
         } else if (cmd == "send") {
             ROS_INFO("--Command: Send Image Points--");
@@ -647,8 +759,6 @@ public:
             }
 
             if (img_pts_pub.getNumSubscribers() > 0) {
-                // poses_res.header.stamp = ros::Time::now();
-                // ++poses_res.header.seq;
 
                 img_pts_pub.publish(img_res_msg);
 

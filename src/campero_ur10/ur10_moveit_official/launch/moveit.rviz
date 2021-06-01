@@ -9,6 +9,7 @@ Panels:
         - /Grid1/Offset1
         - /MarkerArray1
         - /PlanningScene1/Scene Robot1
+        - /MotionPlanning1
         - /MotionPlanning1/Scene Geometry1
         - /MotionPlanning1/Scene Robot1
         - /MotionPlanning1/Planning Request1
@@ -16,7 +17,7 @@ Panels:
         - /MotionPlanning1/Planned Path1
         - /TF1/Frames1
       Splitter Ratio: 0.742560029
-    Tree Height: 331
+    Tree Height: 340
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -54,74 +55,7 @@ Visualization Manager:
       Marker Topic: /rviz_visual_tools
       Name: MarkerArray
       Namespaces:
-        Cylinder: true
-        Sphere: true
-        Text: true
-        pt0: true
-        pt1: true
-        pt10: true
-        pt11: true
-        pt12: true
-        pt13: true
-        pt14: true
-        pt15: true
-        pt16: true
-        pt17: true
-        pt18: true
-        pt19: true
-        pt2: true
-        pt20: true
-        pt21: true
-        pt22: true
-        pt23: true
-        pt24: true
-        pt25: true
-        pt26: true
-        pt27: true
-        pt28: true
-        pt29: true
-        pt3: true
-        pt30: true
-        pt31: true
-        pt32: true
-        pt33: true
-        pt34: true
-        pt35: true
-        pt36: true
-        pt37: true
-        pt38: true
-        pt39: true
-        pt4: true
-        pt40: true
-        pt41: true
-        pt42: true
-        pt43: true
-        pt44: true
-        pt45: true
-        pt46: true
-        pt47: true
-        pt48: true
-        pt49: true
-        pt5: true
-        pt50: true
-        pt51: true
-        pt52: true
-        pt53: true
-        pt54: true
-        pt55: true
-        pt56: true
-        pt57: true
-        pt58: true
-        pt59: true
-        pt6: true
-        pt60: true
-        pt61: true
-        pt62: true
-        pt63: true
-        pt64: true
-        pt7: true
-        pt8: true
-        pt9: true
+        {}
       Queue Size: 100
       Value: true
     - Class: moveit_rviz_plugin/Trajectory
@@ -1219,23 +1153,11 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        aruco_marker_frame_1:
-          Value: true
-        aruco_marker_frame_2:
-          Value: true
-        aruco_marker_frame_3:
-          Value: true
-        aruco_marker_frame_4:
-          Value: true
         base:
           Value: false
         base_link:
           Value: false
         base_pen_link:
-          Value: false
-        camera_aligned_depth_to_color_frame:
-          Value: false
-        camera_aligned_depth_to_infra1_frame:
           Value: false
         camera_bottom_screw_frame:
           Value: false
@@ -1247,14 +1169,6 @@ Visualization Manager:
           Value: false
         camera_depth_optical_frame:
           Value: false
-        camera_infra1_frame:
-          Value: false
-        camera_infra1_optical_frame:
-          Value: false
-        camera_infra2_frame:
-          Value: false
-        camera_infra2_optical_frame:
-          Value: false
         camera_left_ir_frame:
           Value: false
         camera_left_ir_optical_frame:
@@ -1264,10 +1178,6 @@ Visualization Manager:
         camera_right_ir_frame:
           Value: false
         camera_right_ir_optical_frame:
-          Value: false
-        campero_back_left_wheel_link:
-          Value: false
-        campero_back_right_wheel_link:
           Value: false
         campero_base_docking_contact_link:
           Value: false
@@ -1281,19 +1191,13 @@ Visualization Manager:
           Value: false
         campero_front_laser_structure_link:
           Value: false
-        campero_front_left_wheel_link:
-          Value: false
         campero_front_ptz_camera_base_link:
           Value: false
         campero_front_ptz_camera_frame_link:
           Value: false
         campero_front_ptz_camera_optical_frame_link:
           Value: false
-        campero_front_ptz_camera_pan_link:
-          Value: false
         campero_front_ptz_camera_tilt_link:
-          Value: false
-        campero_front_right_wheel_link:
           Value: false
         campero_imu_link:
           Value: false
@@ -1307,17 +1211,9 @@ Visualization Manager:
           Value: false
         campero_robotiq_85_left_finger_link:
           Value: false
-        campero_robotiq_85_left_finger_tip_link:
-          Value: false
-        campero_robotiq_85_left_inner_knuckle_link:
-          Value: false
         campero_robotiq_85_left_knuckle_link:
           Value: false
         campero_robotiq_85_right_finger_link:
-          Value: false
-        campero_robotiq_85_right_finger_tip_link:
-          Value: false
-        campero_robotiq_85_right_inner_knuckle_link:
           Value: false
         campero_robotiq_85_right_knuckle_link:
           Value: false
@@ -1331,135 +1227,11 @@ Visualization Manager:
           Value: false
         forearm_link:
           Value: false
-        pt_board_0:
-          Value: true
-        pt_board_1:
-          Value: true
-        pt_board_10:
-          Value: true
-        pt_board_11:
-          Value: true
-        pt_board_12:
-          Value: true
-        pt_board_13:
-          Value: true
-        pt_board_14:
-          Value: true
-        pt_board_15:
-          Value: true
-        pt_board_16:
-          Value: true
-        pt_board_17:
-          Value: true
-        pt_board_18:
-          Value: true
-        pt_board_19:
-          Value: true
-        pt_board_2:
-          Value: true
-        pt_board_20:
-          Value: true
-        pt_board_21:
-          Value: true
-        pt_board_22:
-          Value: true
-        pt_board_23:
-          Value: true
-        pt_board_24:
-          Value: true
-        pt_board_25:
-          Value: true
-        pt_board_26:
-          Value: true
-        pt_board_27:
-          Value: true
-        pt_board_28:
-          Value: true
-        pt_board_29:
-          Value: true
-        pt_board_3:
-          Value: true
-        pt_board_30:
-          Value: true
-        pt_board_31:
-          Value: true
-        pt_board_32:
-          Value: true
-        pt_board_33:
-          Value: true
-        pt_board_34:
-          Value: true
-        pt_board_35:
-          Value: true
-        pt_board_36:
-          Value: true
-        pt_board_37:
-          Value: true
-        pt_board_38:
-          Value: true
-        pt_board_39:
-          Value: true
-        pt_board_4:
-          Value: true
-        pt_board_40:
-          Value: true
-        pt_board_41:
-          Value: true
-        pt_board_42:
-          Value: true
-        pt_board_43:
-          Value: true
-        pt_board_44:
-          Value: true
-        pt_board_45:
-          Value: true
-        pt_board_46:
-          Value: true
-        pt_board_47:
-          Value: true
-        pt_board_48:
-          Value: true
-        pt_board_49:
-          Value: true
-        pt_board_5:
-          Value: true
-        pt_board_50:
-          Value: true
-        pt_board_51:
-          Value: true
-        pt_board_52:
-          Value: true
-        pt_board_53:
-          Value: true
-        pt_board_54:
-          Value: true
-        pt_board_55:
-          Value: true
-        pt_board_56:
-          Value: true
-        pt_board_57:
-          Value: true
-        pt_board_58:
-          Value: true
-        pt_board_59:
-          Value: true
-        pt_board_6:
-          Value: true
-        pt_board_60:
-          Value: true
-        pt_board_61:
-          Value: true
-        pt_board_62:
-          Value: true
-        pt_board_7:
-          Value: true
-        pt_board_8:
-          Value: true
-        pt_board_9:
-          Value: true
         shoulder_link:
           Value: false
         tool0:
+          Value: false
+        tool0_controller:
           Value: false
         upper_arm_link:
           Value: false
@@ -1479,7 +1251,8 @@ Visualization Manager:
           campero_base_link:
             base_link:
               base:
-                {}
+                tool0_controller:
+                  {}
               shoulder_link:
                 upper_arm_link:
                   forearm_link:
@@ -1491,22 +1264,10 @@ Visualization Manager:
                           ee_link:
                             camera_bottom_screw_frame:
                               camera_link:
-                                camera_aligned_depth_to_color_frame:
-                                  {}
-                                camera_aligned_depth_to_infra1_frame:
-                                  camera_infra1_optical_frame:
-                                    {}
                                 camera_depth_frame:
                                   camera_color_frame:
                                     camera_color_optical_frame:
-                                      aruco_marker_frame_1:
-                                        {}
-                                      aruco_marker_frame_2:
-                                        {}
-                                      aruco_marker_frame_3:
-                                        {}
-                                      aruco_marker_frame_4:
-                                        {}
+                                      {}
                                   camera_depth_optical_frame:
                                     {}
                                   camera_left_ir_frame:
@@ -1515,34 +1276,14 @@ Visualization Manager:
                                   camera_right_ir_frame:
                                     camera_right_ir_optical_frame:
                                       {}
-                                camera_infra1_frame:
-                                  {}
-                                camera_infra2_frame:
-                                  camera_infra2_optical_frame:
-                                    {}
                             campero_sensor_fts_robotside:
                               campero_sensor_fts_toolside:
                                 campero_robotiq_85_base_link:
-                                  campero_robotiq_85_left_inner_knuckle_link:
-                                    campero_robotiq_85_left_finger_tip_link:
-                                      {}
-                                  campero_robotiq_85_left_knuckle_link:
-                                    campero_robotiq_85_left_finger_link:
-                                      {}
-                                  campero_robotiq_85_right_inner_knuckle_link:
-                                    campero_robotiq_85_right_finger_tip_link:
-                                      {}
-                                  campero_robotiq_85_right_knuckle_link:
-                                    campero_robotiq_85_right_finger_link:
-                                      {}
+                                  {}
                               campero_sensor_robotiq_force_torque_frame_id:
                                 {}
                           tool0:
                             {}
-            campero_back_left_wheel_link:
-              {}
-            campero_back_right_wheel_link:
-              {}
             campero_base_docking_contact_link:
               {}
             campero_front_laser_base_link:
@@ -1550,15 +1291,7 @@ Visualization Manager:
                 {}
             campero_front_laser_structure_link:
               {}
-            campero_front_left_wheel_link:
-              {}
             campero_front_ptz_camera_base_link:
-              campero_front_ptz_camera_pan_link:
-                campero_front_ptz_camera_tilt_link:
-                  campero_front_ptz_camera_frame_link:
-                    campero_front_ptz_camera_optical_frame_link:
-                      {}
-            campero_front_right_wheel_link:
               {}
             campero_imu_link:
               {}
@@ -1567,132 +1300,6 @@ Visualization Manager:
                 {}
             campero_rear_laser_structure_link:
               {}
-          pt_board_0:
-            {}
-          pt_board_1:
-            {}
-          pt_board_10:
-            {}
-          pt_board_11:
-            {}
-          pt_board_12:
-            {}
-          pt_board_13:
-            {}
-          pt_board_14:
-            {}
-          pt_board_15:
-            {}
-          pt_board_16:
-            {}
-          pt_board_17:
-            {}
-          pt_board_18:
-            {}
-          pt_board_19:
-            {}
-          pt_board_2:
-            {}
-          pt_board_20:
-            {}
-          pt_board_21:
-            {}
-          pt_board_22:
-            {}
-          pt_board_23:
-            {}
-          pt_board_24:
-            {}
-          pt_board_25:
-            {}
-          pt_board_26:
-            {}
-          pt_board_27:
-            {}
-          pt_board_28:
-            {}
-          pt_board_29:
-            {}
-          pt_board_3:
-            {}
-          pt_board_30:
-            {}
-          pt_board_31:
-            {}
-          pt_board_32:
-            {}
-          pt_board_33:
-            {}
-          pt_board_34:
-            {}
-          pt_board_35:
-            {}
-          pt_board_36:
-            {}
-          pt_board_37:
-            {}
-          pt_board_38:
-            {}
-          pt_board_39:
-            {}
-          pt_board_4:
-            {}
-          pt_board_40:
-            {}
-          pt_board_41:
-            {}
-          pt_board_42:
-            {}
-          pt_board_43:
-            {}
-          pt_board_44:
-            {}
-          pt_board_45:
-            {}
-          pt_board_46:
-            {}
-          pt_board_47:
-            {}
-          pt_board_48:
-            {}
-          pt_board_49:
-            {}
-          pt_board_5:
-            {}
-          pt_board_50:
-            {}
-          pt_board_51:
-            {}
-          pt_board_52:
-            {}
-          pt_board_53:
-            {}
-          pt_board_54:
-            {}
-          pt_board_55:
-            {}
-          pt_board_56:
-            {}
-          pt_board_57:
-            {}
-          pt_board_58:
-            {}
-          pt_board_59:
-            {}
-          pt_board_6:
-            {}
-          pt_board_60:
-            {}
-          pt_board_61:
-            {}
-          pt_board_62:
-            {}
-          pt_board_7:
-            {}
-          pt_board_8:
-            {}
-          pt_board_9:
-            {}
       Update Interval: 0
       Value: true
     - Class: rviz/Image
@@ -1731,6 +1338,18 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /camera/color/image_rect_color
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: real_sense
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1748,7 +1367,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.03621817
+      Distance: 2.58453989
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -1763,10 +1382,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.664796412
+      Pitch: 0.195202842
       Target Frame: panda_link0
       Value: XYOrbit (rviz)
-      Yaw: 3.04681277
+      Yaw: 3.16502094
     Saved: ~
 Window Geometry:
   Displays:
@@ -1780,19 +1399,21 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000200000000000002ad000003dafc0200000017fc00000028000001aa000001a10100001dfa000000010100000002fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000000ffffffff000002ad00fffffffb000000100044006900730070006c0061007900730100000000000002ad0000016a00fffffffb0000000800480065006c00700000000342000000bb0000007300fffffffb0000000a00560069006500770073000000026d000000b5000000ad00fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb0000002e004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d00200053006c0069006400650072010000026f000000480000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000209000001ad0000000000000000fb000000120020002d00200053006c006900640065007201000002df000000480000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000032d000001fb0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004a00fffffffb0000003c005400720061006a006500630074006f007200790020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004a00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002290000018e0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002740000018e0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002740000018e0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002740000018e0000000000000000fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002240000018e0000000000000000fb00000024005200760069007a00560069007300750061006c0054006f006f006c00730047007500690000000289000000a10000004300fffffffb0000000a0049006d0061006700650100000283000001630000000000000000fb0000001c0061007200750063006f005f006400650074006500630074006f007201000001d8000000a80000001600fffffffb000000280069006d006100670065005f0069006e007000610069006e00740069006e0067005f0072006500730100000286000000a90000001600fffffffb0000002c0069006d006100670065005f0069006e007000610069006e00740069006e0067005f006400650062007500670100000335000000cd0000001600ffffff0000000100000140000003befc0200000001fb0000000a0049006d0061006700650100000028000003be0000000000000000000004cd000003da00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000300000000000002ad000003dafc0200000016fc00000028000001b3000001a10100001dfa000000010100000002fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000000ffffffff000002ad00fffffffb000000100044006900730070006c0061007900730100000000000002ad0000016a00fffffffb0000000800480065006c00700000000342000000bb0000007300fffffffb0000000a00560069006500770073000000026d000000b5000000ad00fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb0000002e004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d00200053006c0069006400650072010000026f000000480000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000209000001ad0000000000000000fb000000120020002d00200053006c006900640065007201000002df000000480000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000032d000001fb0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004a00fffffffb0000003c005400720061006a006500630074006f007200790020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004a00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002290000018e0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002740000018e0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002740000018e0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002740000018e0000000000000000fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002240000018e0000000000000000fb00000024005200760069007a00560069007300750061006c0054006f006f006c00730047007500690000000289000000a10000004300fffffffb0000000a0049006d0061006700650100000283000001630000000000000000fb000000280069006d006100670065005f0069006e007000610069006e00740069006e0067005f00720065007301000001e1000001420000001600fffffffb0000002c0069006d006100670065005f0069006e007000610069006e00740069006e0067005f006400650062007500670100000329000000d90000001600ffffff0000000100000140000003befc0200000001fb0000000a0049006d0061006700650100000028000003be0000000000000000000000020000048c00000106fc0100000002fb00000014007200650061006c005f00730065006e0073006501000002b30000026d0000007b00fffffffb0000001c0061007200750063006f005f006400650074006500630074006f00720100000526000002190000009b00ffffff0000048c000002ce00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RvizVisualToolsGui:
     collapsed: false
   Trajectory - Trajectory Slider:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1920
-  X: 0
+  Width: 1855
+  X: 65
   Y: 24
   aruco_detector:
     collapsed: false
   image_inpainting_debug:
     collapsed: false
   image_inpainting_res:
+    collapsed: false
+  real_sense:
     collapsed: false

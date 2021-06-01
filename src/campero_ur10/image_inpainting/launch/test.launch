@@ -1,0 +1,7 @@
+<launch>
+  <node name="test_edges" pkg="image_inpainting"
+      type="test_edges"
+      output="screen">
+  </node>
+
+</launch>

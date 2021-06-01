@@ -51,5 +51,9 @@ add_executable(image_inpainting src/image_inpainting.cpp)
 add_dependencies(image_inpainting campero_ur10_msgs_generate_messages_cpp)
 target_link_libraries(image_inpainting ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS image_inpainting DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+add_executable(test_edges src/test_edges.cpp)
+add_dependencies(test_edges campero_ur10_msgs_generate_messages_cpp)
+target_link_libraries(test_edges ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+install(TARGETS image_inpainting test_edges DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
