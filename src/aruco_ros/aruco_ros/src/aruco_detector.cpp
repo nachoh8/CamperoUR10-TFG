@@ -195,6 +195,8 @@ public:
 
       // for each marker, draw info and its boundaries in the image
       for (size_t i = 0; i < markers.size(); ++i) {
+        if (!markers[i].isValid()) continue;
+        
         // 1.Get marker transform
         tf::Transform transform = aruco_ros::arucoMarker2Tf(markers[i], rotate_marker_axis_);
         tf::StampedTransform cameraToReference;
@@ -211,7 +213,7 @@ public:
           //static_cast<tf::Transform>(cameraToReference) 
             static_cast<tf::Transform>(rightToLeft) 
           * transform;*/
-
+        
         std::string marker_frame_final = marker_frame + "_" + std::to_string(markers[i].id);
         tf::StampedTransform stampedTransform(transform, curr_stamp,
                                               reference_frame, marker_frame_final);
