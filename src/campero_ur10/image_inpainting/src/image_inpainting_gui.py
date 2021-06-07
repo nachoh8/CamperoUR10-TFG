@@ -22,7 +22,15 @@ can_update = True
 
 canny_th1 = 100
 canny_th2 = 300
+
 blur_ksize = 3
+
+max_kernel_size = 21
+max_erode_dilate_type = 3
+erode_type = 0 # {0: NOT_APPLY, 1: MORPH_RECT, 2: MORPH_CROSS, 3: MORPH_ELLIPSE}
+erode_size = 0
+dilate_type = 0 # {0: NOT_APPLY, 1: MORPH_RECT, 2: MORPH_CROSS, 3: MORPH_ELLIPSE}
+dilate_size = 0
 
 def mouse_callback(event, x, y, flags, param):
     global pub, can_update, canny_th1, canny_th2, blur_ksize
@@ -47,18 +55,29 @@ def mouse_callback(event, x, y, flags, param):
             rospy.set_param('/image_inpainting/canny_th1', canny_th1)
             rospy.set_param('/image_inpainting/canny_th2', canny_th2)
             rospy.set_param('/image_inpainting/blur_ksize', blur_ksize)
+            rospy.set_param('/image_inpainting/erode_type', erode_type)
+            rospy.set_param('/image_inpainting/erode_size', erode_size)
+            rospy.set_param('/image_inpainting/dilate_type', dilate_type)
+            rospy.set_param('/image_inpainting/dilate_size', dilate_size)
             pub.publish("update_image")
-
         
-
 def trackbar_callback(idx, v):
-    global canny_th1, canny_th2, blur_ksize
+    global canny_th1, canny_th2, blur_ksize, erode_type, erode_size, dilate_type, dilate_size
     if idx == 0:
         canny_th1 = v
     elif idx == 1:
         canny_th2 = v
     elif idx == 2:
         blur_ksize = v
+    elif idx == 3:
+        erode_type = v
+    elif idx == 4:
+        erode_size = v
+    elif idx == 5:
+        dilate_type = v
+    elif idx == 6:
+        dilate_size = v
+        
 
 img_settings = np.zeros((H, W, 3), np.uint8)
 
@@ -90,6 +109,10 @@ cv.namedWindow(WINDOW_NAME)
 cv.createTrackbar('Canny Threshold 1', WINDOW_NAME, canny_th1, 1000, lambda v: trackbar_callback(0,v))
 cv.createTrackbar('Canny Threshold 2', WINDOW_NAME, canny_th2, 1000, lambda v: trackbar_callback(1,v))
 cv.createTrackbar('Blur Kernel Size', WINDOW_NAME, blur_ksize, 5, lambda v: trackbar_callback(2,v))
+cv.createTrackbar('Erode type(MORPH_RECT,MORPH_CROSS,MORPH_ELLIPSE)', WINDOW_NAME, erode_type, max_erode_dilate_type, lambda v: trackbar_callback(3,v))
+cv.createTrackbar('Erode', WINDOW_NAME, erode_size, max_kernel_size, lambda v: trackbar_callback(4,v))
+cv.createTrackbar('Dilate type(MORPH_RECT,MORPH_CROSS,MORPH_ELLIPSE)', WINDOW_NAME, dilate_type, max_erode_dilate_type, lambda v: trackbar_callback(5,v))
+cv.createTrackbar('Dilate', WINDOW_NAME, dilate_size, max_kernel_size, lambda v: trackbar_callback(6,v))
 
 cv.setMouseCallback(WINDOW_NAME, mouse_callback)
 

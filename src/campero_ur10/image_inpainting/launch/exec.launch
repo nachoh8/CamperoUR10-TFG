@@ -6,6 +6,10 @@
   <arg name="canny_th1" default="100"/>
   <arg name="canny_th2" default="300"/>
   <arg name="blur_ksize" default="3"/>
+  <arg name="erode_type" default="0"/>
+  <arg name="erode_size" default="3"/>
+  <arg name="dilate_type" default="0"/>
+  <arg name="dilate_size" default="3"/>
 
   <node name="image_inpainting" pkg="image_inpainting"
       type="image_inpainting" respawn="false"
@@ -17,6 +21,10 @@
       <param name="canny_th1"       value="$(arg canny_th1)"/>
       <param name="canny_th2"       value="$(arg canny_th2)"/>
       <param name="blur_ksize"       value="$(arg blur_ksize)"/>
+      <param name="erode_type"       value="$(arg erode_type)"/>
+      <param name="erode_size"       value="$(arg erode_size)"/>
+      <param name="dilate_type"       value="$(arg dilate_type)"/>
+      <param name="dilate_size"       value="$(arg dilate_size)"/>
   </node>
 
 </launch>

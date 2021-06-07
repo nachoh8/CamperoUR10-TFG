@@ -199,8 +199,8 @@ public:
         
         // 1.Get marker transform
         tf::Transform transform = aruco_ros::arucoMarker2Tf(markers[i], rotate_marker_axis_);
-        tf::StampedTransform cameraToReference;
-        cameraToReference.setIdentity();
+        // tf::StampedTransform cameraToReference;
+        // cameraToReference.setIdentity();
 
         /*if ( reference_frame != camera_frame )
         {
