@@ -379,10 +379,10 @@ void CamperoUR10::processRealTrace(const campero_ur10_msgs::ImgTrace trace, std:
     target.position.z = z_pen_up;
     waypoints.push_back(target);
 	
+	target.position.z = board_z + correct_z;
     for (int i = 0; i < trace.points.size(); i++) {
         target.position.y = trace.points[i].y + correct_y;
 		target.position.x = trace.points[i].x + correct_x;
-		target.position.z = 0.79 + correct_z;
         waypoints.push_back(target);
     }
     

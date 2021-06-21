@@ -106,10 +106,32 @@ public:
     void setThresholdMethod(ThresholdMethods m) {
         _thresMethod=m;
     }
+    void mySetThresholdMethod(const int m) {
+        switch (m) {
+            case 0:
+                setThresholdMethod(FIXED_THRES);
+                break;
+            case 2:
+                setThresholdMethod(CANNY);
+                break;
+            default:
+                setThresholdMethod(ADPT_THRES);
+        }
+    }
     /**Returns the current threshold method
      */
     ThresholdMethods getThresholdMethod()const {
         return _thresMethod;
+    }
+    int myGetThresholdMethod()const {
+        switch (getThresholdMethod()) {
+            case FIXED_THRES:
+                return 0;
+            case CANNY:
+                return 2;
+            default:
+                return 1;
+        }
     }
     /**
      * Set the parameters of the threshold method

@@ -4,6 +4,9 @@
     <arg name="marker_frame"    default="aruco_marker_frame"/>
     <arg name="ref_frame"       default="camera_color_optical_frame"/>  <!-- leave empty and the pose will be published wrt param parent_name -->
     <arg name="corner_refinement" default="LINES" /> <!-- NONE, HARRIS, LINES, SUBPIX -->
+    <arg name="threshold_method" default="ADPT_THRES" /> <!-- FIXED_THRES, ADPT_THRES, CANNY -->
+    <arg name="threshold_1" default="7" />
+    <arg name="threshold_2" default="7" />
 
 
     <node pkg="aruco_ros" type="aruco_detector" name="aruco_detector" output="screen">
@@ -15,6 +18,9 @@
         <param name="camera_frame"       value="camera_color_optical_frame"/>  <!-- campero_front_ptz_camera_optical_frame_link" campero_rear_rgbd_camera_color_optical_frame -->
         <param name="marker_frame"       value="$(arg marker_frame)" />
         <param name="corner_refinement"  value="$(arg corner_refinement)" />
+        <param name="threshold_method"  value="$(arg threshold_method)" />
+        <param name="threshold_1"  value="$(arg threshold_1)" />
+        <param name="threshold_2"  value="$(arg threshold_2)" />
         <param name="rotate_marker_axis"  value="False" />
     </node>
 

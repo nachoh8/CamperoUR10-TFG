@@ -15,6 +15,7 @@ Panels:
         - /MotionPlanning1/Planning Request1
         - /MotionPlanning1/Planning Metrics1
         - /MotionPlanning1/Planned Path1
+        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.742560029
     Tree Height: 340
@@ -1159,6 +1160,10 @@ Visualization Manager:
           Value: false
         base_pen_link:
           Value: false
+        camera_aligned_depth_to_color_frame:
+          Value: false
+        camera_aligned_depth_to_infra1_frame:
+          Value: false
         camera_bottom_screw_frame:
           Value: false
         camera_color_frame:
@@ -1168,6 +1173,14 @@ Visualization Manager:
         camera_depth_frame:
           Value: false
         camera_depth_optical_frame:
+          Value: false
+        camera_infra1_frame:
+          Value: false
+        camera_infra1_optical_frame:
+          Value: false
+        camera_infra2_frame:
+          Value: false
+        camera_infra2_optical_frame:
           Value: false
         camera_left_ir_frame:
           Value: false
@@ -1264,10 +1277,15 @@ Visualization Manager:
                           ee_link:
                             camera_bottom_screw_frame:
                               camera_link:
+                                camera_aligned_depth_to_color_frame:
+                                  camera_color_optical_frame:
+                                    {}
+                                camera_aligned_depth_to_infra1_frame:
+                                  camera_infra1_optical_frame:
+                                    {}
+                                camera_color_frame:
+                                  {}
                                 camera_depth_frame:
-                                  camera_color_frame:
-                                    camera_color_optical_frame:
-                                      {}
                                   camera_depth_optical_frame:
                                     {}
                                   camera_left_ir_frame:
@@ -1276,6 +1294,11 @@ Visualization Manager:
                                   camera_right_ir_frame:
                                     camera_right_ir_optical_frame:
                                       {}
+                                camera_infra1_frame:
+                                  {}
+                                camera_infra2_frame:
+                                  camera_infra2_optical_frame:
+                                    {}
                             campero_sensor_fts_robotside:
                               campero_sensor_fts_toolside:
                                 campero_robotiq_85_base_link:

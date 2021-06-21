@@ -9,6 +9,7 @@
 #include <utility>
 
 #include <ros/ros.h>
+#include "std_msgs/String.h"
 
 #include <aruco/aruco.h>
 #include <aruco/cvdrawingutils.h>
@@ -31,11 +32,14 @@
 #include <campero_ur10_msgs/ArucoMarkerArray.h>
 #include <campero_ur10_msgs/ArucoMarkersImg.h>
 
+
 using namespace aruco;
 
 class ArucoDetector
 {
 private:
+  ros::Subscriber process_cmd_sub;
+
   aruco::CameraParameters camParam;
   tf::StampedTransform rightToLeft;
   bool useRectifiedImages;
@@ -66,6 +70,87 @@ private:
 
   dynamic_reconfigure::Server<aruco_ros::ArucoThresholdConfig> dyn_rec_server;
 
+  void load_detector_config() {
+    std::string aux;
+    nh.param<std::string>("corner_refinement", aux, "LINES");
+    if ( aux == "SUBPIX" ) {
+      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::SUBPIX);
+    } else if ( aux == "HARRIS" ) {
+      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::HARRIS);
+    } else if ( aux == "NONE" ) {
+      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::NONE); 
+    } else {
+      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::LINES);
+    }
+
+    
+    nh.param<std::string>("threshold_method", aux, "ADPT_THRES");
+    if ( aux == "FIXED_THRES" ) {
+      mDetector.mySetThresholdMethod(0);
+    } else if ( aux == "CANNY" ) {
+      mDetector.mySetThresholdMethod(2);
+    } else {
+      mDetector.mySetThresholdMethod(1);
+    }
+    
+    double th1, th2;
+    nh.param<double>("threshold_1", th1, 7);
+    nh.param<double>("threshold_2", th2, 7);
+    mDetector.setThresholdParams(th1, th2);
+
+  }
+
+  void print_detector_info() {
+    std::string aux;
+    switch (mDetector.getCornerRefinementMethod()) {
+      case aruco::MarkerDetector::SUBPIX:
+        aux = "SUBPIX";
+        break;
+      case aruco::MarkerDetector::HARRIS:
+        aux = "HARRIS";
+        break;
+      case aruco::MarkerDetector::NONE:
+        aux = "NONE";
+        break;
+      default:
+        aux = "LINES";
+    }
+    ROS_INFO("Corner refinement method: %s ", aux.c_str());
+    
+    switch (mDetector.myGetThresholdMethod()) {
+      case 0:
+        aux = "FIXED_THRES";
+        break;
+      case 2:
+        aux = "CANNY";
+        break;
+      default:
+        aux = "ADPT_THRES";
+    }
+    ROS_INFO("Threshold method: %s ", aux.c_str());
+
+    double th1, th2;
+    mDetector.getThresholdParams(th1, th2);
+    ROS_INFO_STREAM("Threshold method: " << " th1: " << th1 << " th2: " << th2);
+
+    float mins, maxs;
+    mDetector.getMinMaxSize(mins, maxs);
+    ROS_INFO_STREAM("Marker size min: " << mins << "  max: " << maxs);
+
+    ROS_INFO_STREAM("Desired speed: " << mDetector.getDesiredSpeed());
+  }
+  
+  int idExists(const int id, const campero_ur10_msgs::ArucoMarkerArray& markers) {
+    int count = 0;
+    for (int i = 0; i < markers.markers.size(); i++) {
+      if (markers.markers[i].id == id) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
 public:
   ArucoDetector()
     : cam_info_received(false),
@@ -73,36 +158,14 @@ public:
       it(nh)
   {
 
-    std::string refinementMethod;
-    nh.param<std::string>("corner_refinement", refinementMethod, "LINES");
-    if ( refinementMethod == "SUBPIX" )
-      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::SUBPIX);
-    else if ( refinementMethod == "HARRIS" )
-      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::HARRIS);
-    else if ( refinementMethod == "NONE" )
-      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::NONE); 
-    else      
-      mDetector.setCornerRefinementMethod(aruco::MarkerDetector::LINES); 
+    load_detector_config();
+    print_detector_info();    
 
-    //Print parameters of aruco marker detector:
-    ROS_INFO_STREAM("Corner refinement method: " << mDetector.getCornerRefinementMethod());
-    ROS_INFO_STREAM("Threshold method: " << mDetector.getThresholdMethod());
-    double th1, th2;
-    mDetector.getThresholdParams(th1, th2);
-    ROS_INFO_STREAM("Threshold method: " << " th1: " << th1 << " th2: " << th2);
-    float mins, maxs;
-    mDetector.getMinMaxSize(mins, maxs);
-    ROS_INFO_STREAM("Marker size min: " << mins << "  max: " << maxs);
-    ROS_INFO_STREAM("Desired speed: " << mDetector.getDesiredSpeed());
-    
-
-
+    process_cmd_sub = nh.subscribe("/aruco_detector/cmd", 1, &ArucoDetector::process_cmd_callback, this);
     image_sub = it.subscribe("/image", 1, &ArucoDetector::image_callback, this);
     cam_info_sub = nh.subscribe("/camera_info", 1, &ArucoDetector::cam_info_callback, this);
 
     image_detector_pub = it.advertise("detector", 1);
-    //image_res_pub = it.advertise("result", 1);
-    //markers_pub = nh.advertise<campero_ur10_msgs::ArucoMarkerArray>("markers", 100);
     markers_pub = nh.advertise<campero_ur10_msgs::ArucoMarkersImg>("markers_img", 1);
     markers_pose_pub = nh.advertise<campero_ur10_msgs::ArucoMarkerArray>("markers_pose", 1);
 
@@ -215,6 +278,10 @@ public:
           * transform;*/
         
         std::string marker_frame_final = marker_frame + "_" + std::to_string(markers[i].id);
+        int c = idExists(markers[i].id, marker_array.markers);
+        if (c > 0) {
+          marker_frame_final = marker_frame_final + "_" + std::to_string(c);
+        }
         tf::StampedTransform stampedTransform(transform, curr_stamp,
                                               reference_frame, marker_frame_final);
         br.sendTransform(stampedTransform);
@@ -310,6 +377,15 @@ public:
     if (config.normalizeImage)
     {
       ROS_WARN("normalizeImageIllumination is unimplemented!");
+    }
+  }
+
+  void process_cmd_callback(const std_msgs::String::ConstPtr& msg) {
+    std::string cmd = msg->data;
+
+    if (cmd == "update_config") {
+      load_detector_config();
+      print_detector_info();
     }
   }
 };
