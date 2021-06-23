@@ -369,7 +369,10 @@ moveit::planning_interface::MoveGroupInterface& CamperoUR10::getMoveGroup() {
 }
 
 void CamperoUR10::processRealTrace(const campero_ur10_msgs::ImgTrace trace, std::vector<geometry_msgs::Pose>& waypoints) {
-    ROS_INFO("Trace: %d points", trace.points.size());
+    const int numPts = trace.points.size();
+    if (numPts <= 0) return;
+
+    ROS_INFO("Trace: %d points", numPts);
     
 	geometry_msgs::Pose target = move_group.getCurrentPose().pose;
     
@@ -380,7 +383,7 @@ void CamperoUR10::processRealTrace(const campero_ur10_msgs::ImgTrace trace, std:
     waypoints.push_back(target);
 	
 	target.position.z = board_z + correct_z;
-    for (int i = 0; i < trace.points.size(); i++) {
+    for (int i = 0; i < numPts; i++) {
         target.position.y = trace.points[i].y + correct_y;
 		target.position.x = trace.points[i].x + correct_x;
         waypoints.push_back(target);
@@ -391,7 +394,10 @@ void CamperoUR10::processRealTrace(const campero_ur10_msgs::ImgTrace trace, std:
 }
 
 void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints) {
-    ROS_INFO("Trace: %d points", trace.points.size());
+    const int numPts = trace.points.size();
+    if (numPts <= 0) return;
+
+    ROS_INFO("Trace: %d points", numPts);
 
     geometry_msgs::Pose target = move_group.getCurrentPose().pose;
     
@@ -403,7 +409,7 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
 
     // add all points
     target.position.z = z_pen_down;
-    for (int i = 0; i < trace.points.size(); i++) {
+    for (int i = 0; i < numPts; i++) {
         target.position.y = board_min_y + trace.points[i].x * w_div + correct_y;
         target.position.x = board_min_x + trace.points[i].y * h_div + correct_x;
         waypoints.push_back(target);
