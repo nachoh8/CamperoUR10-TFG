@@ -430,15 +430,9 @@ public:
     
     void find_contours(const std::vector<cv::Mat> objetosImagen) {
         // Find contours on image objets
-		std::vector< std::vector<cv::Point> > contours_orig;
-        //img_debug_show = cv::Mat::zeros(img_correct.size(), img_correct.type());// img_correct.clone();
-        //img_original_show = img_original.clone();
-        img_original_show = img_original.clone(); // cv::Mat::zeros(img_original.size(), img_correct.type()); 
-
         for (int i = 0; i < objetosImagen.size(); i++) {
             std::vector< std::vector<cv::Point> > contours_local;
             cv::findContours( objetosImagen[i], contours_local, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE );
-
             if (contours_local.size() == 0) {
                 continue;
             }
@@ -456,98 +450,55 @@ public:
             }
 
             if (indiceMax >= 0 && maxLen > img_params->min_contour_size) {
-				std::vector<cv::Point> pts;
-				for(int r = 0; r < contours_local[indiceMax].size(); r++) {
-                    int b = cv::theRNG().uniform(0, 255);
-                    int g = cv::theRNG().uniform(0, 255);
-                    int rr = cv::theRNG().uniform(0, 255);
-                    cv::Vec3b c((uchar)b, (uchar)g, (uchar)rr);
+                if (img_params->apply_concaveman) {
+                    std::vector<point_type> points;
+                    std::vector<int> hull;
+                    cv2concave(objetosImagen[i], points, hull);
 
-                    //cv::circle(img_debug_show, contours_local[indiceMax][r], 0, c, -1);
-
-                    cv::Point p = H_to_Orig(contours_local[indiceMax][r]);
-					pts.push_back(p);
-                    cv::circle(img_original_show, p, 0, c, -1);
-				}
-				contours_orig.push_back(pts);
-                //cv::drawContours( img_debug_show, contours_local, indiceMax, cv::Scalar(0,0,255), 1 );
-
-                contours.push_back(contours_local[indiceMax]);
-                total_pts += contours_local[indiceMax].size();
-            }
-        }
-        
-        //cv::drawContours( img_original_show, contours_orig, -1, cv::Scalar(0,0,255), 1 );
-        //cv::cvtColor(img_original_show, img_original_show, cv::COLOR_GRAY2RGB);
-    }
-
-    void find_contours_concave(const std::vector<cv::Mat> objetosImagen) {
-        // Find contours on image objets
-        img_debug_show = cv::Mat::zeros(img_correct.size(), CV_8UC1);
-        //img_original_show = cv::Mat::zeros(img_original.size(), CV_8UC1);
-
-        for (int i = 0; i < objetosImagen.size(); i++) {
-            std::vector< std::vector<cv::Point> > contours_local;
-            cv::findContours( objetosImagen[i], contours_local, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE );
-
-            if (contours_local.size() == 0) {
-                continue;
-            }
-
-            double maxLen = -1;
-            int indiceMax = -1;
-            for( size_t i = 0; i < contours_local.size(); i++ )
-            {
-                double len = cv::arcLength( contours_local[i], true );
-
-                if (len > maxLen) {
-                    maxLen = len;
-                    indiceMax = i;
+                    auto concave = concaveman<T, 16>(points, hull, img_params->concaveman_alpha, 1);
+                    
+                    std::vector<cv::Point> shape;
+                    cv::Mat aux = concave2cv(concave, img_correct.cols, img_correct.rows, shape);
+                    
+                    contours.push_back(shape);
+                    total_pts += shape.size();
+                } else {
+                    contours.push_back(contours_local[indiceMax]);
+                    total_pts += contours_local[indiceMax].size();
                 }
             }
-
-            if (indiceMax >= 0 && maxLen > img_params->min_contour_size) {
-                // 3.concave
-                std::cout << "Object " << i << "/" << objetosImagen.size() << std::endl;
-                std::vector<point_type> points;
-                std::vector<int> hull;
-                cv2concave(objetosImagen[i], points, hull);
-                
-                ROS_INFO("Num Pts Orig: %d \n Num Pts hull: %d ", points.size(), hull.size());
-
-                auto concave = concaveman<T, 16>(points, hull, 2, 1);
-                
-                ROS_INFO("Num Concave pts: %d ", concave.size());
-                std::vector<cv::Point> shape;
-                cv::Mat aux = concave2cv(concave, img_correct.cols, img_correct.rows, shape);
-                contours.push_back(shape);
-                total_pts += shape.size();
-                img_debug_show += aux;
-            }
         }
-
-        cv::cvtColor(img_debug_show, img_debug_show, cv::COLOR_GRAY2BGR);
-        //cv::cvtColor(img_original_show, img_original_show, cv::COLOR_GRAY2BGR);
-        
-        //cv::drawContours( img_original_show, contours_orig, -1, cv::Scalar(0,0,255), 1 );
-        //cv::cvtColor(img_original_show, img_original_show, cv::COLOR_GRAY2RGB);
     }
 
+    void fill_images_show() {
+        img_debug_show = img_correct.clone();
+        img_original_show = img_original.clone();
+        for (int i = 0; i < contours.size(); i++) {
+            int b = cv::theRNG().uniform(0, 255);
+            int g = cv::theRNG().uniform(0, 255);
+            int rr = cv::theRNG().uniform(0, 255);
+            cv::Vec3b c((uchar)b, (uchar)g, (uchar)rr);
+            for(int j = 0; j < contours[i].size(); j++) {
+                cv::circle(img_debug_show, contours[i][j], 0, c, -1);
+
+                cv::Point p = H_to_Orig(contours[i][j]);
+                cv::circle(img_original_show, p, 0, c, -1);
+            }
+        }
+    }
+    
     /// Img Processing Methods
     void find_pts() {
         contours.clear();
         total_pts = 0;
-        proc_basic();
-        /*switch(img_params->contour_method) {
+        
+        switch(img_params->contour_method) {
             case 1:
                 proc_watershed();
                 break;
-            case 2:
-                proc_pcl();
-                break;
             default:
                 proc_basic();
-        }*/
+        }
     }
 
     void proc_basic() {
@@ -583,9 +534,6 @@ public:
         
         // 3.Delete Markers
         delete_markers(img_otsu);
-        
-        img_original_show = img_otsu.clone();
-        cv::cvtColor(img_original_show, img_original_show, cv::COLOR_GRAY2BGR);
 
         // 4.Calculo componentes conexas
         cv::Mat objetos;
@@ -608,7 +556,11 @@ public:
         }
         
         // 7.Encontrar contornos
-        find_contours_concave(objetosImagen);
+        find_contours(objetosImagen);
+
+        // 8.Fill image ouput
+        fill_images_show();
+
     }
 
     void proc_watershed() {
@@ -725,16 +677,19 @@ public:
                 }*/
             }
         }
-		
-        // 9.Find contours on image objets
+        // 9.Encontrar contornos
         find_contours(objetosImagen);
+
+        // 10.Fill image ouput
+        fill_images_show();
     }
 
     inline cv::Mat concave2cv(std::vector<point_type>& points, const int w, const int h, std::vector<cv::Point>& shape) {
         cv::Mat res = cv::Mat::zeros(cv::Size(w, h), CV_8UC1);
         for (auto &pt : points) {
-            shape.push_back(cv::Point(pt[0], pt[1]));
-            unsigned char& v = res.at<unsigned char>(pt[0], pt[1]);
+            cv::Point p(pt[0], pt[1]);
+            shape.push_back(p);
+            unsigned char& v = res.at<unsigned char>(p);
             v = 255;
         }
 
@@ -748,97 +703,9 @@ public:
         cv::convexHull( pts_o, hull);
 
         for (auto& pt: pts_o) {
-            points.push_back({(double)pt.y, (double)pt.x});
+            points.push_back({(double)pt.x, (double)pt.y});
         }
 
     }
 
-    void proc_concave() {
-        // 1.Binarizar
-        cv::Mat gray;
-        cv::cvtColor(img_correct, gray, cv::COLOR_BGR2GRAY);
-
-        cv::Mat thresh;
-        cv::threshold(gray, thresh, 0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
-
-        // 2.Delete Markers
-        delete_markers(thresh);
-
-        // 3.concave
-        std::vector<point_type> points;
-        std::vector<int> hull;
-        cv2concave(thresh, points, hull);
-        
-        ROS_INFO("Num Pts Orig: %d \n Num Pts hull: %d ", points.size(), hull.size());
-
-        auto concave = concaveman<T, 16>(points, hull, 2, 1);
-        
-        ROS_INFO("Num Concave pts: %d ", concave.size());
-        std::vector<cv::Point> shape;
-        img_debug_show = concave2cv(concave, thresh.cols, thresh.rows, shape);
-        contours.push_back(shape);
-        total_pts = shape.size();
-        img_original_show = thresh.clone();
-        cv::cvtColor(img_debug_show, img_debug_show, cv::COLOR_GRAY2BGR);
-        cv::cvtColor(img_original_show, img_original_show, cv::COLOR_GRAY2BGR);
-
-    }
-    /*inline pcl::PointCloud<pcl::PointXYZ>::Ptr cvBin2pclCloud(const cv::Mat& img) {
-        pcl::PointCloud<pcl::PointXYZ> _cloud;
-        _cloud.width = img.cols; 
-        _cloud.height = img.rows;
-        _cloud.is_dense = false;
-        _cloud.points.resize (_cloud.width * _cloud.height);
-        for(int r = 0; r < img.rows; r++) {
-            for(int c = 0; c < img.cols; c++) {
-            const unsigned char& v = img.at<const unsigned char>(r, c);
-            if (v == 255) {
-                _cloud.at(c,r) = pcl::PointXYZ(c, r, 0);
-            }
-            }
-        }
-        /*std::cout << "N_pts: " << _cloud.size() << std::endl;
-        std::cout << "w: " << _cloud.width << " h: " << _cloud.height << std::endl;
-        std::cout << "Organized: " << _cloud.isOrganized() << std::endl;
-
-        return pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ> (_cloud));
-    }
-
-    void proc_pcl() {
-
-        // 1.Binarizar
-        cv::Mat gray;
-        cv::cvtColor(img_correct, gray, cv::COLOR_BGR2GRAY);
-        if (img_params->blur_ksize > 0) {
-            cv::blur(gray, gray, cv::Size(img_params->blur_ksize, img_params->blur_ksize));
-        }
-
-        cv::Mat thresh;
-        cv::threshold(gray, thresh, img_params->binary_thresh, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
-
-        const int dilate_type = img_params->getDilateType();
-        if (dilate_type != -1) {
-            cv::Mat element = cv::getStructuringElement( dilate_type,
-                       cv::Size( 2 * img_params->dilate_size + 1, 2 * img_params->dilate_size + 1 ),
-                       cv::Point( img_params->dilate_size, img_params->dilate_size ) );
-            cv::dilate(thresh, thresh, element );
-        }
-        
-        const int erode_type = img_params->getErodeType();
-        if (erode_type != -1) {
-            cv::Mat element = cv::getStructuringElement( erode_type,
-                       cv::Size( 2 * img_params->erode_type + 1, 2 * img_params->erode_type + 1 ),
-                       cv::Point( img_params->erode_type, img_params->erode_type ) );
-            cv::erode(thresh, thresh, element );
-        }
-        
-        // 2.Convert binary image -> pcl point
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-        
-        pcl::ConcaveHull<pcl::PointXYZ> cHull;
-        pcl::PointCloud<pcl::PointXYZ> cHull_points;
-        cHull.setInputCloud(cloud);
-        cHull.setAlpha(0.1);
-        cHull.reconstruct (cHull_points);
-    }*/
 };

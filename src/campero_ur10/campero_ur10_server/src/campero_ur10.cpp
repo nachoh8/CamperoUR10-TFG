@@ -245,7 +245,7 @@ double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) 
     ROS_INFO("Planning...");
 
     moveit_msgs::RobotTrajectory trajectory;
-    double fraction = move_group.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+    double fraction = move_group.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory, move_group.getPathConstraints());
     
     ROS_INFO("Cartesian plan path (%.2f%% acheived)", fraction * 100.0);
 
@@ -268,14 +268,15 @@ double CamperoUR10::planCarthesian(std::vector<geometry_msgs::Pose>& waypoints) 
     rt.getRobotTrajectoryMsg(trajectory);
     
     my_plan.trajectory_ = trajectory;
-    
+    ROS_INFO("Real points: %d ", my_plan.trajectory_.joint_trajectory.points.size());
+
     return fraction;
 }
 
 bool CamperoUR10::execute() {
     ROS_INFO("Moving...");
     bool success = (move_group.execute(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
+    
     if (success) {
         move_group.setStartStateToCurrentState();
 
@@ -293,12 +294,15 @@ bool CamperoUR10::plan_execute() {
     return false;
 }
 
-bool CamperoUR10::plan_exec_Carthesian(std::vector<geometry_msgs::Pose>& waypoints) {
-    planCarthesian(waypoints);
+bool CamperoUR10::plan_exec_Carthesian(std::vector<geometry_msgs::Pose>& waypoints, const double min_achieve) {
+    
+    if (planCarthesian(waypoints) >= min_achieve) {
+        return execute();
+    }
     
     //prompt("Press 'next' to execute plan");
-
-    return execute();
+    ROS_ERROR("Not reached minimun path(%f)", min_achieve);
+    return false;
 }
 
 bool CamperoUR10::moveJoint(const int joint, const double value) {

@@ -83,6 +83,8 @@ private:
         nh.param<int>("/" + NODE_NAME + "/max_dist_error", img_params->max_dist_error, DEAULT_MAX_DIST_ERROR);
         nh.param<int>("/" + NODE_NAME + "/contour_method", img_params->contour_method, 0);
         nh.param<int>("/" + NODE_NAME + "/min_contour_size", img_params->min_contour_size, 30);
+        nh.param<bool>("/" + NODE_NAME + "/apply_concaveman", img_params->apply_concaveman, true);
+        nh.param<double>("/" + NODE_NAME + "/concaveman_alpha", img_params->concaveman_alpha, 1.0);
         nh.param<bool>("/" + NODE_NAME + "/apply_sharp", img_params->apply_sharp, false);
         nh.param<int>("/" + NODE_NAME + "/binary_thresh", img_params->binary_thresh, 0);
         nh.param<int>("/" + NODE_NAME + "/conectivity_way", img_params->conectivity_way, 8);

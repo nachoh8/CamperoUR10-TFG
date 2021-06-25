@@ -72,12 +72,15 @@ public:
     int binary_thresh; // 0-255
     int conectivity_way; // 4 or 8
 
+    // concaveman:
+    double concaveman_alpha;
+    bool apply_concaveman;
+    
     // method: not_watershed
     bool apply_sharp;
 
     // method: watershed
     int erode_type, erode_size, dilate_type, dilate_size, number_iterations;
-
 
     ImgProcessParams() {}
 
@@ -98,6 +101,8 @@ public:
         std::string msg = "--Image Processing Parameters--\n";
         msg += "Max Distance Error: " + std::to_string(max_dist_error) + " px\n";
         msg += "Contour method: " + getContourMethodName(contour_method) + "\n";
+        msg += "Apply Concaveman: " + std::to_string(apply_concaveman) + "\n";
+        if (apply_concaveman) msg += "\tConcaveman alpha: " + std::to_string(concaveman_alpha) + "\n";
         msg += "Min contour size: " + std::to_string(min_contour_size) + " px\n";
         msg += "Binary Threshold: " + std::to_string(binary_thresh) + "\n";
         msg += "Conectivity way: " + std::to_string(conectivity_way) + "\n";
@@ -124,11 +129,19 @@ public:
         ROS_INFO("Dilate Size: %d ", dilate_size);*/
     }
 
-    int getErodeType() {
+    inline int getErodeType() {
         return getErodeDilateType(erode_type);
     }
 
-    int getDilateType() {
+    inline int getDilateType() {
         return getErodeDilateType(dilate_type);
     }
+
+    /*inline void setConcavemanAlpha(const int _alpha) {
+        alpha = double(_alpha) / double(100);
+    }
+
+    inline void getConcavemanAlpha() {
+        return alpha;
+    }*/
 };

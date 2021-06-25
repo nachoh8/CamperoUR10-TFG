@@ -27,6 +27,9 @@ min_contour_size = 60 # px
 binary_thresh = 0
 conectivity_way = 0
 
+apply_concaveman = 1
+concaveman_alpha = 100
+
 apply_sharp = 0
 
 canny_th1 = 100
@@ -44,7 +47,7 @@ dilate_size = 0
 
 
 def mouse_callback(event, x, y, flags, param):
-    global pub, can_update, canny_th1, canny_th2, blur_ksize, contour_method, min_contour_size, apply_sharp, max_dist_error, binary_thresh, conectivity_way, number_iterations
+    global pub, can_update, canny_th1, canny_th2, blur_ksize, contour_method, min_contour_size, apply_sharp, max_dist_error, binary_thresh, conectivity_way, number_iterations, apply_concaveman, concaveman_alpha
 
     if pub is None:
         rospy.logwarn("No hay publisher")
@@ -74,6 +77,8 @@ def mouse_callback(event, x, y, flags, param):
             rospy.set_param('/image_inpainting/dilate_size', dilate_size)
             rospy.set_param('/image_inpainting/contour_method', contour_method)
             rospy.set_param('/image_inpainting/min_contour_size', min_contour_size)
+            rospy.set_param('/image_inpainting/apply_concaveman', bool(apply_concaveman))
+            rospy.set_param('/image_inpainting/concaveman_alpha', (float(concaveman_alpha)/100.0))
             rospy.set_param('/image_inpainting/apply_sharp', bool(apply_sharp))
             rospy.set_param('/image_inpainting/max_dist_error', max_dist_error)
             rospy.set_param('/image_inpainting/binary_thresh', binary_thresh)
@@ -82,7 +87,7 @@ def mouse_callback(event, x, y, flags, param):
             pub.publish("update_image")
         
 def trackbar_callback(idx, v):
-    global canny_th1, canny_th2, blur_ksize, erode_type, erode_size, dilate_type, dilate_size, contour_method, min_contour_size, apply_sharp, max_dist_error, binary_thresh, conectivity_way, number_iterations
+    global canny_th1, canny_th2, blur_ksize, erode_type, erode_size, dilate_type, dilate_size, contour_method, min_contour_size, apply_sharp, max_dist_error, binary_thresh, conectivity_way, number_iterations, apply_concaveman, concaveman_alpha
     if idx == 0:
         canny_th1 = v
     elif idx == 1:
@@ -111,6 +116,10 @@ def trackbar_callback(idx, v):
         conectivity_way = v
     elif idx == 13:
         number_iterations = v
+    elif idx == 14:
+        apply_concaveman = v
+    elif idx == 15:
+        concaveman_alpha = v 
         
 
 img_settings = np.zeros((H, W, 3), np.uint8)
@@ -140,6 +149,8 @@ pub = rospy.Publisher("/image_inpainting/cmd", String, queue_size=1)
 contour_method = rospy.get_param('/image_inpainting/contour_method', 0)
 min_contour_size = rospy.get_param('/image_inpainting/min_contour_size', 60)
 apply_sharp = int(rospy.get_param('/image_inpainting/apply_sharp', False))
+apply_concaveman = int(rospy.get_param('/image_inpainting/apply_concaveman', True))
+concaveman_alpha = int(rospy.get_param('/image_inpainting/concaveman_alpha', 1.0)*100)
 max_dist_error = rospy.get_param('/image_inpainting/max_dist_error', 7)
 erode_type = int(rospy.get_param('/image_inpainting/erode_type', 1))
 erode_size = rospy.get_param('/image_inpainting/erode_size', 3)
@@ -169,6 +180,8 @@ cv.createTrackbar('Erode', WINDOW_NAME, erode_size, max_kernel_size, lambda v: t
 cv.createTrackbar('Dilate type(MORPH_RECT,MORPH_CROSS,MORPH_ELLIPSE)', WINDOW_NAME, dilate_type, max_erode_dilate_type, lambda v: trackbar_callback(5,v))
 cv.createTrackbar('Dilate', WINDOW_NAME, dilate_size, max_kernel_size, lambda v: trackbar_callback(6,v))
 cv.createTrackbar('apply_sharp', WINDOW_NAME, apply_sharp, 1, lambda v: trackbar_callback(9,v))
+cv.createTrackbar('apply_concaveman', WINDOW_NAME, apply_concaveman, 1, lambda v: trackbar_callback(14,v))
+cv.createTrackbar('concaveman_alpha(v/100)', WINDOW_NAME, concaveman_alpha, 500, lambda v: trackbar_callback(15,v))
 cv.createTrackbar('Blur Kernel Size', WINDOW_NAME, blur_ksize, 5, lambda v: trackbar_callback(2,v))
 
 """

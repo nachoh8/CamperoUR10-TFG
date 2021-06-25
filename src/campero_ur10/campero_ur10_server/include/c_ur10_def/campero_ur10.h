@@ -43,7 +43,7 @@ private:
 
     // eef_step: max distancia entre dos puntos consecutivos en la trayectoria cartesiana resultante
     // jump_threshold poner 0 para evitar saltos en las soluciones con IK
-    const double jump_threshold = 0.0, eef_step = 0.01;
+    const double jump_threshold = 0.0, eef_step = 0.01; // m
 
     geometry_msgs::Quaternion ori_constraint;
 
@@ -78,7 +78,7 @@ public:
 
     bool plan_execute();
 
-    bool plan_exec_Carthesian(std::vector<geometry_msgs::Pose>& waypoints);
+    bool plan_exec_Carthesian(std::vector<geometry_msgs::Pose>& waypoints, const double min_achieve = 1.0);
 
     bool moveJoint(const int joint, const double value);
 
