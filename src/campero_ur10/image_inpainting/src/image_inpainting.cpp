@@ -94,6 +94,8 @@ private:
         nh.param<int>("/" + NODE_NAME + "/erode_size", img_params->erode_size, 3);
         nh.param<int>("/" + NODE_NAME + "/dilate_type", img_params->dilate_type, 0);
         nh.param<int>("/" + NODE_NAME + "/dilate_size", img_params->dilate_size, 3);
+        nh.param<bool>("/" + NODE_NAME + "/apply_smooth_path", img_params->apply_smooth_path, true);
+        nh.param<int>("/" + NODE_NAME + "/smooth_path_kernel", img_params->smooth_path_kernel, 11);
 
         nh.param<int>("/" + NODE_NAME + "/canny_th1", img_params->canny_threshold1, 100);
         nh.param<int>("/" + NODE_NAME + "/canny_th2", img_params->canny_threshold2, 300);

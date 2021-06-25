@@ -39,6 +39,7 @@ private:
 
     cv::Mat img_original, img_correct, img_original_show, img_debug_show;
     std::vector< std::vector<cv::Point> > contours;
+    std::vector< std::vector<cv::Point2d> > contoursD;
     int total_pts = 0;
     
     cv::Mat rotationMatrix, tvec;
@@ -70,6 +71,14 @@ private:
         p_dst /= p_dst.z; // normalize
 
         return cv::Point(p_dst.x, p_dst.y);
+    }
+    
+    cv::Point2d H_to_Orig(cv::Point2d pt) {
+        cv::Point3d p_src(pt.x, pt.y, 1);
+        cv::Point3d p_dst(cv::Mat(H_inv * cv::Mat(p_src)));
+        p_dst /= p_dst.z; // normalize
+
+        return cv::Point2d(p_dst.x, p_dst.y);
     }
 
     cv::Point Orig_to_H(cv::Point pt) {
@@ -284,6 +293,44 @@ private:
 
         return res;
     }
+	
+	std::vector< std::vector<cv::Point3f> > img2CameraD() {
+        cv::Mat leftSideMat  = rotationMatrix.inv() * img_params->cameraMatrix.inv() * z_markers_const;
+        cv::Mat rightSideMat = rotationMatrix.inv() * tvec;
+        std::cout << "img2CameraD\n";
+        std::vector< std::vector<cv::Point3f> > res(contoursD.size());
+        for (int i = 0; i < contoursD.size(); i++) {
+            for (int j = 0; j < contoursD[i].size(); j++) {
+                cv::Point2d pt = contoursD[i][j];
+            
+                cv::Mat uvPt = (cv::Mat_<double>(3,1) << pt.x, pt.y, 1.0);
+                cv::Mat pt_m (cv::Size(3,1), CV_64F);
+                pt_m = leftSideMat * uvPt - rightSideMat;
+                cv::Point3f pt_w(pt_m.at<double>(0), pt_m.at<double>(1), pt_m.at<double>(2));
+                /*if (j < 10) {
+					std::cout << j << std::endl;
+					std::cout << "pt: " << pt << std::endl;
+					std::cout << "uvPt: " << uvPt << std::endl;
+					double rX = leftSideMat.at<double>(0,0) * uvPt.at<double>(0) + leftSideMat.at<double>(0,1) * uvPt.at<double>(1) + leftSideMat.at<double>(0,2) * uvPt.at<double>(2);
+					double rY = leftSideMat.at<double>(1,0) * uvPt.at<double>(0) + leftSideMat.at<double>(1,1) * uvPt.at<double>(1) + leftSideMat.at<double>(1,2) * uvPt.at<double>(2);
+					double rZ = leftSideMat.at<double>(2,0) * uvPt.at<double>(0) + leftSideMat.at<double>(2,1) * uvPt.at<double>(1) + leftSideMat.at<double>(2,2) * uvPt.at<double>(2);
+					
+					rX = rX - rightSideMat.at<double>(0);
+					rY = rY - rightSideMat.at<double>(1);
+					rZ = rZ - rightSideMat.at<double>(2);
+					
+					std::cout << "Rx: " << rX << " Ry: " << rY << " Rz: " << rZ << std::endl;
+					
+					//std::cout << leftSideMat.at<double>(1,1) << "x" << uvPt.at<double>(1) << " = " << leftSideMat.at<double>(1,1) * uvPt.at<double>(1) <<std::endl;
+					std::cout << "pt_m: " << pt_m << std::endl;
+					std::cout << "pt_w: " << pt_w << std::endl;
+				}*/
+                res[i].push_back(pt_w);
+            }
+        }
+
+        return res;
+    }
 
 public:
     ImageRes() {}
@@ -357,11 +404,36 @@ public:
     void img2World() {
         geometry_msgs::Pose p = markers[TOP_LEFT_IDX].pose;
         img_res_msg.traces.clear();
-
-        std::vector< std::vector<cv::Point3f> > pts_cam = img2Camera();
+		
+		std::vector< std::vector<cv::Point3f> > pts_cam;
+		if (img_params->apply_smooth_path) {
+			//std::vector<std::vector<cv::Point2d> > contoursD;
+			for (int i = 0; i < contours.size(); i++) {
+				std::vector<double> xx;
+				std::vector<double> yy;
+				for (auto &pt : contours[i]) {
+					double x = double(pt.x);
+					double y = double(pt.y);
+					xx.push_back(x);
+					yy.push_back(y);
+				}
+				std::vector<cv::Point2d> cD;
+				smoothPath(xx, yy, cD);
+				contoursD.push_back(cD);
+			}
+			
+			pts_cam = img2CameraD();
+			fill_images_showD();
+			
+		} else {
+			pts_cam = img2Camera();
+			fill_images_show();
+		}
+         
         
         for (int i = 0; i < pts_cam.size(); i++) {
 			campero_ur10_msgs::ImgTrace trace;
+			int j = 0;
 			for (auto &pt : pts_cam[i]) {
 				p.position.x = pt.x;
 				p.position.y = pt.y;
@@ -374,12 +446,19 @@ public:
 				geometry_msgs::Pose pose;
 				tf::poseTFToMsg(transform, pose);
 				// poses_res.poses.push_back(pose);
+				/*if (j < 10) {
+					cv::Point2d pt = contoursD[i][j];
+					std::cout << "Pt img: " << pt.x << " " << pt.y << std::endl;
+					std::cout << "Ptcam: " << pt << std::endl;
+					std::cout << "Ptw: " << pose.position << std::endl;
+				}*/
 				
 				campero_ur10_msgs::ImgPoint pt_msg;
 				pt_msg.x = pose.position.x;
 				pt_msg.y = pose.position.y;
 				pt_msg.z = pose.position.z;
 				trace.points.push_back(pt_msg);
+				j++;
 			}
 
 			img_res_msg.traces.push_back(trace);
@@ -473,6 +552,7 @@ public:
     void fill_images_show() {
         img_debug_show = img_correct.clone();
         img_original_show = img_original.clone();
+        
         for (int i = 0; i < contours.size(); i++) {
             int b = cv::theRNG().uniform(0, 255);
             int g = cv::theRNG().uniform(0, 255);
@@ -487,9 +567,35 @@ public:
         }
     }
     
+    void fill_images_showD() {
+        img_debug_show = img_correct.clone();
+        img_original_show = img_original.clone();
+        
+        for (int i = 0; i < contoursD.size(); i++) {
+            int b = cv::theRNG().uniform(0, 255);
+            int g = cv::theRNG().uniform(0, 255);
+            int rr = cv::theRNG().uniform(0, 255);
+            cv::Vec3b c((uchar)b, (uchar)g, (uchar)rr);
+            for(int j = 0; j < contoursD[i].size(); j++) {
+                cv::circle(img_debug_show, contoursD[i][j], 0, c, -1);
+				
+                cv::Point2d p = H_to_Orig(contoursD[i][j]);
+                if (j < 10) std::cout << "Pt img: " << p.x << " " << p.y << std::endl;
+
+                cv::circle(img_original_show, p, 0, c, -1);
+            }
+        }
+        
+        /*cv::imshow("debug", img_debug_show);
+		cv::imshow("original", img_original_show);
+		cv::waitKey(0);*/
+		cv::destroyAllWindows();
+    }
+    
     /// Img Processing Methods
     void find_pts() {
         contours.clear();
+        contoursD.clear();
         total_pts = 0;
         
         switch(img_params->contour_method) {
@@ -559,7 +665,7 @@ public:
         find_contours(objetosImagen);
 
         // 8.Fill image ouput
-        fill_images_show();
+        //fill_images_show();
 
     }
 
@@ -681,7 +787,7 @@ public:
         find_contours(objetosImagen);
 
         // 10.Fill image ouput
-        fill_images_show();
+        //fill_images_show();
     }
 
     inline cv::Mat concave2cv(std::vector<point_type>& points, const int w, const int h, std::vector<cv::Point>& shape) {
@@ -707,5 +813,101 @@ public:
         }
 
     }
+	
+	/// smoothPath
+	void smoothPath(std::vector<double>& xx, std::vector<double>& yy, std::vector<cv::Point2d>& res) {
+		const int n = xx.size();
+		const int scale = img_params->smooth_path_kernel;
+		//std::cout << "len x: " << n << " len y: " << yy.size() << std::endl;
 
+		// 1.gaussian kernel
+		cv::Mat gaussianKernel = cv::getGaussianKernel(scale, double(scale)/sqrt(2.0*M_PI), CV_64F);
+		cv::mulTransposed(gaussianKernel,gaussianKernel,false);
+		//std::cout << "gaussianKernel: " << gaussianKernel << std::endl;
+		//std::cout << "gaussianKernel: " << gaussianKernel.size() << std::endl;
+
+		int pos_middle = int((scale/2.0) + 0.5);
+		//std::cout << "pos_middle: " << pos_middle << std::endl;
+		cv::Mat H = gaussianKernel(cv::Range(pos_middle-1, pos_middle), cv::Range(0, gaussianKernel.cols));
+		//std::cout << "Row " << pos_middle << ":" << H << std::endl;
+		double weight = 0.0;
+		for (int i = 0; i < H.cols; i++) {
+			weight += H.at<double>(1, i);
+		}
+		//std::cout << "weight: " << weight << std::endl;
+
+		// 2.convolution
+
+		std::vector<double> _xExt(xx);
+		_xExt.insert(_xExt.end(), xx.begin(), xx.end()); 
+		_xExt.insert(_xExt.end(), xx.begin(), xx.end());
+		//std::cout << "len xExt: " << _xExt.size() << std::endl;
+		cv::Mat xExt(1, _xExt.size(), CV_64F, _xExt.data());
+		//std::cout << "Mat_xExt: " << xExt.rows << " " << xExt.cols << " | type: " << xExt.type() << std::endl;
+
+		cv::Mat xExtFilt;
+		cv::filter2D(xExt, xExtFilt, CV_64F, H);
+		xExtFilt = xExtFilt * weight;
+		//std::cout << "Mat_xExtFilt: " << xExtFilt.rows << " " << xExtFilt.cols << " | type: " << xExtFilt.type() << std::endl;
+
+		std::vector<double> _yExt(yy);
+		_yExt.insert(_yExt.end(), yy.begin(), yy.end()); 
+		_yExt.insert(_yExt.end(), yy.begin(), yy.end());
+		//std::cout << "len yExt: " << _yExt.size() << std::endl;
+		cv::Mat yExt(1, _yExt.size(), CV_64F, _yExt.data());;
+		//std::cout << "Mat_yExt: " << yExt.rows << " " << yExt.cols << " | type: " << yExt.type() << std::endl;
+
+		cv::Mat yExtFilt;
+		cv::filter2D(yExt, yExtFilt, CV_64F, H);
+		yExtFilt = yExtFilt * weight;
+		//std::cout << "Mat_yExtFilt: " << yExtFilt.rows << " " << yExtFilt.cols << " | type: " << yExtFilt.type() << std::endl;
+
+		//xExt.release();
+		//yExt.release();
+
+		// 3.obtein values in the middle
+
+		cv::Mat xFilt = xExtFilt(cv::Range::all(), cv::Range(n, 2*n));
+		cv::Mat yFilt = yExtFilt(cv::Range::all(), cv::Range(n, 2*n));
+
+		//std::cout << "Mat_xFilt: " << xFilt.rows << " " << xFilt.cols << " | type: " << xFilt.type() << std::endl;
+		//std::cout << "Mat_yFilt: " << yFilt.rows << " " << yFilt.cols << " | type: " << yFilt.type() << std::endl;
+
+		// 4.rescale
+
+		/*double min, maxY_Filt;
+		cv::minMaxLoc(yFilt, &min, &maxY_Filt);
+		double maxY = yy[0];
+		for (int i = 1; i < n; i++) {
+			if (yy[i] > maxY) {
+				maxY = yy[i];
+			}
+		}
+		double factor = std::abs(maxY) / std::abs(maxY_Filt) + 0.000001;
+		std::cout << "maxY: " << maxY << " maxY_Filt: " << maxY_Filt << std::endl;*/
+		double min, maxX_Filt;
+		cv::minMaxLoc(xFilt, &min, &maxX_Filt);
+		double maxX = xx[0];
+		for (int i = 1; i < n; i++) {
+			if (xx[i] > maxX) {
+				maxX = xx[i];
+			}
+		}
+		double factor = std::abs(maxX) / std::abs(maxX_Filt) + 0.000001;
+		std::cout << "maxX: " << maxX << " maxY_Filt: " << maxX_Filt << std::endl;
+		std::cout << "Factor: " << factor << std::endl;
+		xFilt = xFilt * factor;
+		yFilt = yFilt * factor;
+
+		//std::cout << "Mat_xFilt: " << xFilt.rows << " " << xFilt.cols << " | type: " << xFilt.type() << std::endl;
+		//std::cout << "Mat_yFilt: " << yFilt.rows << " " << yFilt.cols << " | type: " << yFilt.type() << std::endl;
+
+		for (int i = 0; i < n; i++) {
+			double x = xFilt.at<double>(i);
+			double y = yFilt.at<double>(i);
+			//std::cout << "x: " << x << " y: " << y << std::endl;
+			res.push_back(cv::Point2d(x,y));
+		}
+	}
+	
 };

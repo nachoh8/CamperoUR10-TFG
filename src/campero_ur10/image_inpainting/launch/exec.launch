@@ -12,6 +12,8 @@
   <arg name="binary_thresh" default="0"/>
   <arg name="conectivity_way" default="8"/>
   <arg name="number_iterations" default="9"/>
+  <arg name="apply_smooth_path" default="true"/>
+  <arg name="smooth_path_kernel" default="11"/>
 
   <arg name="canny_th1" default="100"/>
   <arg name="canny_th2" default="300"/>
@@ -37,6 +39,8 @@
       <param name="binary_thresh"       value="$(arg binary_thresh)"/>
       <param name="conectivity_way"       value="$(arg conectivity_way)"/>
       <param name="number_iterations"       value="$(arg number_iterations)"/>
+      <param name="apply_smooth_path"       value="$(arg apply_smooth_path)"/>
+      <param name="smooth_path_kernel"       value="$(arg smooth_path_kernel)"/>
       
       <param name="canny_th1"       value="$(arg canny_th1)"/>
       <param name="canny_th2"       value="$(arg canny_th2)"/>

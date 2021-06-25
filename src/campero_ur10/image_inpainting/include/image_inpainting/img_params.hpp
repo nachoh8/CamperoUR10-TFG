@@ -76,6 +76,10 @@ public:
     double concaveman_alpha;
     bool apply_concaveman;
     
+    // smoothPath
+    int smooth_path_kernel;
+    bool apply_smooth_path;
+    
     // method: not_watershed
     bool apply_sharp;
 
@@ -103,6 +107,10 @@ public:
         msg += "Contour method: " + getContourMethodName(contour_method) + "\n";
         msg += "Apply Concaveman: " + std::to_string(apply_concaveman) + "\n";
         if (apply_concaveman) msg += "\tConcaveman alpha: " + std::to_string(concaveman_alpha) + "\n";
+        msg += "Apply smoothPath: " + std::to_string(apply_smooth_path) + "\n";
+        if (apply_smooth_path) {
+			msg += "\tKernel size: " + std::to_string(smooth_path_kernel) + "\n";
+		}
         msg += "Min contour size: " + std::to_string(min_contour_size) + " px\n";
         msg += "Binary Threshold: " + std::to_string(binary_thresh) + "\n";
         msg += "Conectivity way: " + std::to_string(conectivity_way) + "\n";
