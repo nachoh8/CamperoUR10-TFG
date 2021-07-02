@@ -15,12 +15,16 @@ uint8 C_UR10_W3_JOINT_IDX = 5
 uint8 X_AXIS = 0
 uint8 Y_AXIS = 1
 uint8 Z_AXIS = 2
-uint8 RX_AXIS = 3
-uint8 RY_AXIS = 4
-uint8 RZ_AXIS = 5
+uint8 ALL_CARTH_AXIS = 3
+uint8 RX_AXIS = 4
+uint8 RY_AXIS = 5
+uint8 RZ_AXIS = 6
 ########################################
 # Messages
 ########################################
 uint8 type
 uint8 id
 float32 value
+float32 vx
+float32 vy
+float32 vz

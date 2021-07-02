@@ -1,0 +1,4 @@
+aruco id: 1 size:0.096
+muestras por posicion aruco 10
+min dist 0.001
+enviar posicion aruco cada 5 frames

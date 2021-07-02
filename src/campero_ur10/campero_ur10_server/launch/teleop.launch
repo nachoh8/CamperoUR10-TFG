@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="debug" default="false" />
-  <arg name="ori" default="0" />
+  <arg name="ori" default="1" />
   <!--arg name="fWS" default="/home/nacho8/ROS_workspaces/campero_ur10_ws/src/campero_ur10_test/param_files/ws.config"/-->
 
   <!-- GDB Debug Option -->

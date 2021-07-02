@@ -69,7 +69,10 @@ private:
   tf::TransformListener _tfListener;
 
   dynamic_reconfigure::Server<aruco_ros::ArucoThresholdConfig> dyn_rec_server;
-
+  
+  const int frame_send = 5;
+  int frame_count = 0;
+  
   void load_detector_config() {
     std::string aux;
     nh.param<std::string>("corner_refinement", aux, "LINES");
@@ -301,8 +304,11 @@ public:
         }
         marker_msg.id = markers[i].id;
 
-        
-        marker_array.markers.markers.push_back(marker_msg);
+		frame_count++;
+		if (frame_count == frame_send) {
+			marker_array.markers.markers.push_back(marker_msg);
+			frame_count = 0;
+		}
 
         // 3.Draw Marker on image
         markers[i].draw(image_detector,cv::Scalar(0,0,255),2);
