@@ -1,3 +1,3 @@
-float32 x # posicion x en el plano origen
-float32 y # posicion y en el plano origen
-float32 z # posicion z en el plano origen
+float32 x # posicion eje x
+float32 y # posicion eje y
+float32 z # posicion eje z

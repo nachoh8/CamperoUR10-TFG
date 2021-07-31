@@ -10,12 +10,12 @@
 
 
     <node pkg="aruco_ros" type="aruco_detector" name="aruco_detector" output="screen">
-        <remap from="/camera_info" to="/camera/color/camera_info" />  <!-- "/campero/front_ptz_camera/camera_info" /campero/rear_rgbd_camera/color/camera_info -->
-        <remap from="/image" to="/camera/color/image_rect_color" />   <!-- "/campero/front_ptz_camera/image_raw" /campero/rear_rgbd_camera/color/image_raw -->
+        <remap from="/camera_info" to="/camera/color/camera_info" />
+        <remap from="/image" to="/camera/color/image_rect_color" />
         <param name="image_is_rectified" value="True"/>
         <param name="marker_size"        value="$(arg markerSize)"/>
-        <param name="reference_frame"    value="$(arg ref_frame)"/>   <!-- frame in which the marker pose will be refered -->
-        <param name="camera_frame"       value="camera_color_optical_frame"/>  <!-- campero_front_ptz_camera_optical_frame_link" campero_rear_rgbd_camera_color_optical_frame -->
+        <param name="reference_frame"    value="$(arg ref_frame)"/>
+        <param name="camera_frame"       value="camera_color_optical_frame"/>
         <param name="marker_frame"       value="$(arg marker_frame)" />
         <param name="corner_refinement"  value="$(arg corner_refinement)" />
         <param name="threshold_method"  value="$(arg threshold_method)" />

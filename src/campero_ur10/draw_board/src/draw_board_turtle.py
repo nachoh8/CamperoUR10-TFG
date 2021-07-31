@@ -1,33 +1,27 @@
-import argparse
 import turtle
 from rospy import ROSInterruptException
 
-import sys
-from os import path
-
-sys.path.insert(1, path.dirname(path.dirname(__file__))+"/lib") # add path to ../lib
-
-from image import MyImageDraw, W_DEFAULT, H_DEFAULT
-from node import DrawBoardNode
-
+from draw_board import Board, getBoardArgs, board_args_parser
 
 STEP_DISTANCE = 1
 
-class BoardTurtle:
-    def __init__(self, w = W_DEFAULT, h = H_DEFAULT):
-        self.W = W_DEFAULT if w < 0 else w
-        self.H = H_DEFAULT if h < 0 else h
-
-        self.node = DrawBoardNode()
-        self.image = MyImageDraw(self.W, self.H, self.W/2, -self.H/2)
+class BoardTurtle(Board):
+    def __init__(self, w, h, step = STEP_DISTANCE):
+        self.super = super(BoardTurtle, self)
+        self.super.__init__(w, h, w/2, -h/2)
+        
+        if step < 1:
+            print("Error: Step Value less than 1")
+            self.super.close()
+            exit(1)
+        
+        self.step = step
 
         self.screen = turtle.Screen()
-        self.screen.setup(self.W, self.H, 0, 0)
+        self.screen.setup(self.width(), self.height(), 0, 0)
         self.t = turtle.Turtle()
         self.t.speed(-1)
         self.t.penup()
-
-        self.key = -1
 
         self.screen.onkey(self.up_down_pen, "p")
         self.screen.onkey(self.move_up, "Up")
@@ -38,8 +32,6 @@ class BoardTurtle:
         self.screen.onkey(self.close, "z")
         self.screen.onkey(self.send, "s")
         self.screen.listen()
-
-        turtle.mainloop()
     
     def up_down_pen(self):
         if self.t.isdown():
@@ -47,17 +39,18 @@ class BoardTurtle:
             self.t.penup()
         else:
             print("Pen Down")
-            self.image.addTrace()
+            self.super.addTrace()
             self.t.pendown()
     
     def clearBoard(self):
-        self.image.clear()
         self.t.clear()
+        self.t.penup()
+        self.super.clearBoard()
 
     def move(self):
         if self.t.isdown():
             x,y = self.t.pos()
-            self.image.addPoint(x, y)
+            self.super.addPoint(x, y)
         self.t.forward(STEP_DISTANCE)
 
     def move_up(self):
@@ -77,29 +70,18 @@ class BoardTurtle:
         self.move()
 
     def close(self):
-        self.node.close()
+        self.super.close()
         turtle.bye()
     
-    def send(self):
-        self.node.publishImage(self.image.getImgDraw())
-
-    def getImgDraw(self):
-        return self.image.getImgDraw()
-
     def main(self):
-        k_last = self.key
-        self.key = -1
-        return k_last
-
+        turtle.mainloop()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Draw on board')
-    parser.add_argument("-W", "--width", type = int, help = 'width of screen', default = W_DEFAULT)
-    parser.add_argument("-H", "--height", type = int, help = 'height of screen', default = H_DEFAULT)
+    board_args_parser.add_argument("-S", "--step", type = int, help = 'move step', default = STEP_DISTANCE)
 
-    args = parser.parse_args()
+    args = getBoardArgs()
     try:
-        board = BoardTurtle(args.width, args.height)
-        turtle.mainloop()
+        board = BoardTurtle(args.width, args.height, args.step)
+        board.main()
     except ROSInterruptException:
         pass

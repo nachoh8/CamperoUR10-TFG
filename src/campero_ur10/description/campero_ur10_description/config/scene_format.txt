@@ -1,0 +1,53 @@
+--.scene format--
+
+<scene_name> # header: string
+* <object_name1> # object declaration: string
+<num_shapes> # number of shapes: int >= 1
+<shape1> # shape list
+<shape2>
+. # end of file
+
+--Shapes Available--
+
+box
+<x> <y> <z> # size (meters): double
+<x> <y> <z> # position (meters): double
+<rx> <ry> <rz> <rw> # orientation (quaternions): double
+<r> <g> <b> <a> # color in RGBA format: float in range [0,1]
+
+cylinder
+<r> <l> # radius and length (meters): double
+<x> <y> <z> # position (meters): double
+<rx> <ry> <rz> <rw> # orientation (quaternions): double
+<r> <g> <b> <a> # color in RGBA format: float in range [0,1]
+
+cone
+<r> <l> # radius and length (meters): double
+<x> <y> <z> # position (meters): double
+<rx> <ry> <rz> <rw> # orientation (quaternions): double
+<r> <g> <b> <a> # color in RGBA format: float in range [0,1]
+
+sphere
+<r> # radius (meters): double
+<x> <y> <z> # position (meters): double
+<rx> <ry> <rz> <rw> # orientation (quaternions): double
+<r> <g> <b> <a> # color in RGBA format: float in range [0,1]
+
+mesh
+<v> <t> # number of vertex and triangles : int >= 0
+<x> <y> <z> # position (meters): double
+<rx> <ry> <rz> <rw> # orientation (quaternions): double
+<r> <g> <b> <a> # color in RGBA format: float in range [0,1]
+
+plane
+<a> <b> <c> <d> # ecuation of a plane -> ax + by + cz + d = 0: double
+<x> <y> <z> # position (meters): double
+<rx> <ry> <rz> <rw> # orientation (quaternions): double
+<r> <g> <b> <a> # color in RGBA format: float in range [0,1]
+
+--Problemas--
+- Los planos siempre son transparentes, no se puede poner color.
+- publicando la escena en el nodo moveit_publish_scene_from_text o desde código los colores RGBa no los tiene en cuenta y salen siempre verdes,
+  si se cargan desde el menu de MoveIt en Rviz si que los respeta
+- La escena no carga si un objeto tiene más de un plano
+- Si se carga un objeto con más de una caja mediante moveit_publish_scene_from_text y se intenta eliminar dicho objeto en Rviz, sale otro objeto que no se puede eliminar

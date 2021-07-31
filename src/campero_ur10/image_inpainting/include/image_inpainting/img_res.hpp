@@ -341,6 +341,7 @@ public:
         markers = _markers;
         img_res_msg.W = -1;
         img_res_msg.H = -1;
+        img_res_msg.type = campero_ur10_msgs::ImageDraw::REAL_POINTS;
         img_params = _img_params;
     }
 

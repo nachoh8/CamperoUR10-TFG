@@ -5,10 +5,8 @@ import math
 import tf
 import geometry_msgs.msg
 
-WORLD_FRAME='/campero_base_footprint'
-
-AXIS_X = "x"
-AXIS_Y = "y"
+from campero_ur10_msgs.msg import MoveOp, ArucoMarkerArray, ArucoMarker
+import keyboard_teleop as k_op
 
 NUM_SAMPLES = 1000 # num muestras para medir una posicon
 
@@ -16,87 +14,133 @@ MARKER_ID = 0 # id de la marca a seguir
 
 # MIN_D_TIME = 0.5 # minimo tiempo en segundos que tiene que transcurrir entre dos posiciones distintas
 
-MIN_D_POS = 0.05 # minima distancia en metros que tiene que moverse la marca entre dos posiciones distintas
+MIN_D_POS = 0.005 # minima distancia en metros que tiene que moverse la marca entre dos posiciones distintas
+MAX_D_POS = 0.1
 
-# dist = lambda p1,p2: math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
-dist = lambda p1,p2: [p2[0] - p1[0], p2[1] - p1[1]]
+dist = lambda p1,p2: math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
+
+pub = None
+
+read_markers = False
+finished_read_pos = False
+
+last_pos = None
+new_pos = [0.0, 0.0]
+avg_count = 0
 
 def move_robot(last_pos, new_pos):
     global MIN_D_POS
-
-    # if last_pos is None:
-    #     return new_pos
         
-    dX = last_pos[0] - new_pos[0]
+    dX = new_pos[0] - last_pos[0]
     dY = new_pos[1] - last_pos[1]
     v = [0,0]
-
+    
+    mod = dist(last_pos, new_pos)
+    
+    if mod > MAX_D_POS:
+		rospy.logwarn("Satura: " + str(mod))
+		dX = dX / mod
+		dY = dY / mod
+	
     if abs(dX) > MIN_D_POS:
         v[0] = dX
 
     if abs(dY) > MIN_D_POS:
         v[1] = dY
 
-    if v[0] != 0 or v[1] != 0:
-        # TODO: send operation
-        rospy.loginfo("Last Pos: " + str(last_pos) + " New Pos: " + str(new_pos))
-        rospy.loginfo("Move: " + str(v))
-        return new_pos
+    return v
 
-    return last_pos
+def send():
+    global pub, last_pos, new_pos, avg_count
+
+    if pub is None: 
+        rospy.logerr("Error: no hay publisher")
+        return
+    
+    if last_pos is None: 
+        rospy.logerr("Error: no hay posicion inicial")
+        return
+    
+    if new_pos[0] == 0 and new_pos[1] == 0:
+        rospy.logerr("Error: no hay posicion final")
+        return
+
+    op = move_robot(last_pos, new_pos)
+
+    if op[0] == 0 and op[1] == 0:
+        rospy.loginfo("No se ha superado el limite minimo de distancia")
+        return
+    
+    rospy.loginfo("Operation: " + str(op))
+
+    msg = MoveOp()
+    msg.type = MoveOp.MOVE_CARTHESIAN
+    msg.id = MoveOp.ALL_CARTH_AXIS
+    msg.vx = op[0]
+    msg.vy = op[1]
+    msg.vz = 0
+
+    pub.publish(msg)
+
+    rospy.loginfo("Operation send")
+
+def receive_markers(data):
+    global MARKER_ID, NUM_SAMPLES, read_markers, last_pos, new_pos, avg_count, finished_read_pos
+
+    markers = data.markers
+    if not read_markers or len(markers) == 0:
+        return
+    
+    for marker in markers:
+        if marker.id == MARKER_ID:
+            # print(marker.pose.position.x, marker.pose.position.y)
+            new_pos[0] += marker.pose.position.x
+            new_pos[1] += -marker.pose.position.y
+            avg_count += 1
+
+            if avg_count < NUM_SAMPLES:
+                break
+            
+            read_markers = False
+            new_pos = [new_pos[0] / float(NUM_SAMPLES), new_pos[1] / float(NUM_SAMPLES)]
+            
+            if last_pos is None:    
+                rospy.loginfo("\nNew Pos: " + str(new_pos))
+            else:
+                rospy.loginfo("\nLast Pos: " + str(last_pos) + "\nNew Pos: " + str(new_pos))
+                send()
+            
+            
+            last_pos = new_pos
+            new_pos = [0.0, 0.0]
+            avg_count = 0
+            break
 
 def main():
-    rospy.init_node('campero_ur10_teleop_aruco')
+    global NUM_SAMPLES, MARKER_ID, MIN_D_POS, pub, last_pos, new_pos, read_markers, avg_count
 
-    listener = tf.TransformListener()
+    rospy.init_node('campero_ur10_teleop_aruco')
 
     rate = rospy.Rate(100.0)
 
-    if AXIS_X.lower() == "z":
-        xx = 2
-    elif AXIS_X.lower() == "y":
-        xx = 1
-    else:
-        xx = 0
-    
-    if AXIS_Y.lower() == "z":
-        yy = 2
-    elif AXIS_Y.lower() == "x":
-        yy = 0
-    else:
-        yy = 1
+    pub = rospy.Publisher("campero_ur10_move", MoveOp, queue_size=1)
+    rospy.Subscriber("/aruco_detector/markers_pose", ArucoMarkerArray, receive_markers, queue_size=100)
 
-    info = "World frame: " + str(WORLD_FRAME) + "\n"
-    info += "Aruco Marker id: " + str(MARKER_ID) + "\n"
+    info = "\nAruco Marker id: " + str(MARKER_ID) + "\n"
     info += "Num. samples per position: " + str(NUM_SAMPLES) + "\n"
     info += "Min. distance between positions: " + str(MIN_D_POS) + "\n"
-    info += "Original Axis " + AXIS_X + " remap to X\n"
-    info += "Original Axis " + AXIS_Y + " remap to Y\n"
     rospy.loginfo(info)
 
-    rospy.loginfo("Teleop Ready")
+    rospy.loginfo("\n---Teleop Ready---\n\n")
 
-    last_pos = None 
-    i = 0
+    read_markers = True
     while not rospy.is_shutdown():
-
-        try:
-            samples_x = 0.0
-            samples_y = 0.0
-            for _ in range(NUM_SAMPLES):
-                (trans,_) = listener.lookupTransform(WORLD_FRAME, "/aruco_marker_frame_" + str(MARKER_ID), rospy.Time(0))
-                samples_x += trans[xx]
-                samples_y += trans[yy]
-            new_pos = [samples_x / float(NUM_SAMPLES), samples_y / float(NUM_SAMPLES)]
-            if i < 5 or last_pos is None: # eliminar ruido inicial
-                last_pos = new_pos
-                i += 1
-            else:
-                last_pos = move_robot(last_pos, new_pos)
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            continue
-            
-        rate.sleep()
+        if not read_markers:
+            rospy.sleep(0.01)
+            rospy.loginfo("\n\n--Ready to read next pos--\n")
+            read_markers = True
+        else:
+            rate.sleep()
     
 
     rospy.loginfo("End Program")
@@ -107,18 +151,14 @@ if __name__ == '__main__':
     parser.add_argument("-ID", "--id", type = int, help = 'marker id', default = MARKER_ID)
     parser.add_argument("-S", "--ns", type = int, help = 'num samples', default = NUM_SAMPLES)
     parser.add_argument("-D", "--dp", type = float, help = 'min distance', default = MIN_D_POS)
-    parser.add_argument("-W", "--w", type = str, help = 'world_frame', default = WORLD_FRAME)
-    parser.add_argument("-A_X", "--x", type = str, help = 'original axis to remap x', default = AXIS_X)
-    parser.add_argument("-A_Y", "--y", type = str, help = 'original axis to remap y', default = AXIS_Y)
+    parser.add_argument("-MP", "--mp", type = float, help = 'max distance', default = MAX_D_POS)
 
     args = parser.parse_args()
     try:
-        WORLD_FRAME = args.w
         MARKER_ID = args.id
         NUM_SAMPLES = args.ns
         MIN_D_POS = args.dp
-        AXIS_X = args.x
-        AXIS_Y = args.y
+        MAX_D_POS = args.mp
 
         main()
     except rospy.ROSInterruptException:

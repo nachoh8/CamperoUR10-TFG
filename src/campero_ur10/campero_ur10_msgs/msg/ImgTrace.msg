@@ -1,1 +1,2 @@
-ImgPoint[] points # trazo de una imagen formado n puntos
+# trazo de una imagen
+ImgPoint[] points

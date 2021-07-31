@@ -36,6 +36,14 @@
         <joint name="wrist_2_joint" value="-1.57" />
         <joint name="wrist_3_joint" value="1.57" />
     </group_state>
+    <group_state name="vertical_up" group="manipulator">
+        <joint name="elbow_joint" value="0" />
+        <joint name="shoulder_lift_joint" value="-1.57" />
+        <joint name="shoulder_pan_joint" value="-3.14" />
+        <joint name="wrist_1_joint" value="-1.57" />
+        <joint name="wrist_2_joint" value="0" />
+        <joint name="wrist_3_joint" value="0" />
+    </group_state>
     <group_state name="home" group="manipulator">
         <joint name="elbow_joint" value="0" />
         <joint name="shoulder_lift_joint" value="0" />

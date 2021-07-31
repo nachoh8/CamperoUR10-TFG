@@ -25,16 +25,16 @@ namespace rvt = rviz_visual_tools;
 #define QUEUE_SIZE_TELEOP 100 // teleop topic queue size
 #define QUEUE_SIZE_IMG_DRAW 1 // img_draw topic queue size
 
-#define FIELD_W_BOARD "#W_BOARD"
-#define FIELD_H_BOARD "#H_BOARD"
-#define FIELD_BOARD_X "#BOARD_X"
-#define FIELD_BOARD_Y "#BOARD_Y"
-#define FIELD_BOARD_Z "#BOARD_Z"
-#define FIELD_Z_PEN_DOWN "#Z_PEN_DOWN"
-#define FIELD_Z_PEN_UP "#Z_PEN_UP"
-#define FIELD_CORRECT_X "#CORRECT_X"
-#define FIELD_CORRECT_Y "#CORRECT_Y"
-#define FIELD_CORRECT_Z "#CORRECT_Z"
+#define FIELD_W_BOARD "*W_BOARD"
+#define FIELD_H_BOARD "*H_BOARD"
+#define FIELD_BOARD_X "*BOARD_X"
+#define FIELD_BOARD_Y "*BOARD_Y"
+#define FIELD_BOARD_Z "*BOARD_Z"
+#define FIELD_Z_PEN_DOWN "*Z_PEN_DOWN"
+#define FIELD_Z_PEN_UP "*Z_PEN_UP"
+#define FIELD_CORRECT_X "*CORRECT_X"
+#define FIELD_CORRECT_Y "*CORRECT_Y"
+#define FIELD_CORRECT_Z "*CORRECT_Z"
 
 CamperoUR10::CamperoUR10(C_UR10_Mode _mode, std::string& config_file, bool _add_ori) {
     init(_mode);
@@ -173,7 +173,7 @@ void CamperoUR10::printDrawConfig() {
     ROS_INFO(s.c_str());
     s = "---Z_PEN_UP: " + std::to_string(z_pen_up);
     ROS_INFO(s.c_str());
-    s = "---Correcion de posicion(x,y): (" + std::to_string(correct_x) + ", " + std::to_string(correct_y) + ")";
+    s = "---Correcion de posicion(x,y,z): (" + std::to_string(correct_x) + ", " + std::to_string(correct_y) + ", " + std::to_string(correct_z) + ")";
     ROS_INFO(s.c_str());
 
     ROS_INFO("--Board:");
@@ -346,12 +346,12 @@ bool CamperoUR10::addOriConstraint() {
     ROS_INFO("2.Add orientation constraint");
 
     moveit_msgs::OrientationConstraint ocm;
-    ocm.link_name = C_UR10_W3_LINK;
+    ocm.link_name = move_group.getEndEffectorLink();//C_UR10_W3_LINK;
     ocm.header.frame_id = C_UR10_BASE_LINK;
     ocm.weight = 1.0;
-    ocm.absolute_x_axis_tolerance = 0.1;
-    ocm.absolute_y_axis_tolerance = 0.1;
-    ocm.absolute_z_axis_tolerance = 2*M_PI;
+    ocm.absolute_x_axis_tolerance = 0.01;//0.1;
+    ocm.absolute_y_axis_tolerance = 0.01;//0.1;
+    ocm.absolute_z_axis_tolerance = 0.01;//2*M_PI;
     ocm.orientation = ori_constraint;
 
     moveit_msgs::Constraints constraints;
@@ -397,7 +397,7 @@ void CamperoUR10::processRealTrace(const campero_ur10_msgs::ImgTrace trace, std:
     waypoints.push_back(target);
 }
 
-void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_div, const double h_div, std::vector<geometry_msgs::Pose>& waypoints) {
+void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const double w_scale, const double h_scale, std::vector<geometry_msgs::Pose>& waypoints) {
     const int numPts = trace.points.size();
     if (numPts <= 0) return;
 
@@ -406,16 +406,16 @@ void CamperoUR10::processTrace(const campero_ur10_msgs::ImgTrace trace, const do
     geometry_msgs::Pose target = move_group.getCurrentPose().pose;
     
     // go to first point with pen up
-    target.position.y = board_min_y + trace.points[0].x * w_div + correct_y;
-    target.position.x = board_min_x + trace.points[0].y * h_div + correct_x;
+    target.position.y = board_min_y + trace.points[0].x * w_scale + correct_y;
+    target.position.x = board_min_x + trace.points[0].y * h_scale + correct_x;
     target.position.z = z_pen_up;
     waypoints.push_back(target);
 
     // add all points
     target.position.z = z_pen_down;
     for (int i = 0; i < numPts; i++) {
-        target.position.y = board_min_y + trace.points[i].x * w_div + correct_y;
-        target.position.x = board_min_x + trace.points[i].y * h_div + correct_x;
+        target.position.y = board_min_y + trace.points[i].x * w_scale + correct_y;
+        target.position.x = board_min_x + trace.points[i].y * h_scale + correct_x;
         waypoints.push_back(target);
     }
 
@@ -431,31 +431,33 @@ void CamperoUR10::callbackDraw(const campero_ur10_msgs::ImageDraw image) {
     }
 
     ROS_INFO("Image received: %d traces", image.traces.size());
-    
-    bool _real_pts = image.W == -1 && image.H == -1;
 
     std::vector<geometry_msgs::Pose> waypoints;
 
-    if (_real_pts) {
+    if (image.type == campero_ur10_msgs::ImageDraw::REAL_POINTS) {
         ROS_INFO("Process Real Points");
         
         for (int i = 0; i < image.traces.size(); i++) {
             processRealTrace(image.traces[i], waypoints);
         }
 
-    } else {
+    } else if (image.type == campero_ur10_msgs::ImageDraw::BOARD_POINTS) {
         ROS_INFO("Process Virtual Board Points");
         if (image.W <= 0 || image.H <= 0) {
             ROS_WARN("Virtual Board Size invalid: %dx%d", image.W, image.H);
             return;
         }
 
-        const double w_div = w_board / image.W;
-        const double h_div = h_board / image.H;
+        const double w_scale = w_board / image.W;
+        const double h_scale = h_board / image.H;
 
         for (int i = 0; i < image.traces.size(); i++) {
-            processTrace(image.traces[i], w_div, h_div, waypoints);
+            processTrace(image.traces[i], w_scale, h_scale, waypoints);
         }
+        
+    } else {
+        ROS_WARN("Tipo de dibujo no valido");
+        return;
     }
     
     // plan & execute
@@ -476,7 +478,7 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
     ROS_INFO("Operation received");
 
     const int type = operation.type, id = operation.id;
-    const double v = operation.value;
+    //const double v = operation.value;
     
     if (id < 0 || id > 6) { // id not valid
         ROS_INFO("Id %d not valid", id);
@@ -484,7 +486,7 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
         if (operation.type == campero_ur10_msgs::MoveOp::MOVE_JOINT) {
             ROS_INFO("Moving joint: %d", id);
 
-            double f_v = v + move_group.getCurrentJointValues()[id]; // update joint id value
+            double f_v = operation.vx + move_group.getCurrentJointValues()[id]; // update joint id value
             ROS_INFO("New value target: %.2f rads", f_v);
             
             moveJoint(id, f_v);
@@ -505,6 +507,7 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
 				plan_exec_Carthesian(waypoints);
 				
             } else {
+                const double v = operation.vx;
 				if (id < campero_ur10_msgs::MoveOp::RX_AXIS) { // XYZ
 					switch (id)
 					{
@@ -516,10 +519,6 @@ void CamperoUR10::callbackMoveOp(const campero_ur10_msgs::MoveOp operation) {
 						break;
 					case campero_ur10_msgs::MoveOp::Z_AXIS:
 						target_pose.position.z += v;
-						break;
-					case campero_ur10_msgs::MoveOp::ALL_CARTH_AXIS:
-						target_pose.position.x += operation.vx;
-						target_pose.position.y += operation.vy;
 						break;
 					default:
 						break;

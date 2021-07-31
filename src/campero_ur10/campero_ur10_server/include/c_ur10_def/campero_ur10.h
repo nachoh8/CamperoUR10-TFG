@@ -13,6 +13,7 @@
 #include <campero_ur10_msgs/MoveOp.h>
 #include <campero_ur10_msgs/ImageDraw.h>
 #include <campero_ur10_msgs/ImgTrace.h>
+#include <campero_ur10_msgs/ImgPoint.h>
 
 #include "c_ur10_utils.h"
 

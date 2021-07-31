@@ -73,7 +73,7 @@ def buildMsg(ch):
     msg = MoveOp()
     msg.type = MoveOp.MOVE_JOINT if modeJoint else MoveOp.MOVE_CARTHESIAN
     msg.id = id
-    msg.value = v
+    msg.vx = v
 
     return msg
 
