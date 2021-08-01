@@ -5,10 +5,11 @@ from campero_ur10_msgs.msg import ImageDraw
 TOPIC_NAME="image_points"
 NODE_NAME="draw_board"
 
-class DrawBoardNode:
-    def __init__(self):
+class DrawNode:
+    def __init__(self, suffix = ""):
         self.pub = rospy.Publisher(TOPIC_NAME, ImageDraw, queue_size=1)
-        rospy.init_node(NODE_NAME, anonymous=True)
+        name = NODE_NAME if suffix is None or len(suffix) == 0 else NODE_NAME + "_" + suffix
+        rospy.init_node(name, anonymous=True)
 
     def publishImage(self, image):
         rospy.loginfo("Send Iamge")

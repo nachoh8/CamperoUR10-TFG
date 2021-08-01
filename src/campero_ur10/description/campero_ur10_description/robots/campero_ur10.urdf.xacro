@@ -189,7 +189,7 @@
 
 		<link name = "base_pen_link" type="fixed">
 			<visual> <!--cilindro soporte-->
-				<origin xyz="-0.11 0 0" rpy="0 ${PI/2} 0" />
+				<origin xyz="-0.13 0 0" rpy="0 ${PI/2} 0" />
 				<geometry>
 					<cylinder length="0.24" radius="0.0075"/>
 				</geometry>

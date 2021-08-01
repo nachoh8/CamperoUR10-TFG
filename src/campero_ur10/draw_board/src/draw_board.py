@@ -1,18 +1,16 @@
 import argparse
 
-from image import MyImageDraw
-from node import DrawBoardNode
+from draw import Draw
+from node import DrawNode
 
 SIZE_DEFAULT = 512
 W_DEFAULT = SIZE_DEFAULT
 H_DEFAULT = SIZE_DEFAULT
-XOFFSET_DEFAULT = 0
-YOFFSET_DEFAULT = 0
 
 class Board(object):
-    def __init__(self, w = W_DEFAULT, h = H_DEFAULT, xoffset = XOFFSET_DEFAULT, yoffset = YOFFSET_DEFAULT):
-        self.node = DrawBoardNode()
-        self.image = MyImageDraw(w, h, xoffset, yoffset)
+    def __init__(self, w = W_DEFAULT, h = H_DEFAULT, suffix = ""):
+        self.node = DrawNode(suffix)
+        self.image = Draw(w, h)
         self.okey()
     
     def okey(self):
@@ -43,11 +41,12 @@ class Board(object):
     def send(self):
         self.node.publishImage(self.image.getImgDraw())
     
+    def isOkROS(self):
+        return not self.node.isClosed()
+
     def close(self):
+        self.clearBoard()
         self.node.close()
-    
-    def main(self):
-        print("Main Loop")
 
 
 # Args

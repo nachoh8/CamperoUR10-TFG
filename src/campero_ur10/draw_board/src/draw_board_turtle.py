@@ -5,20 +5,20 @@ from draw_board import Board, getBoardArgs, board_args_parser
 
 STEP_DISTANCE = 1
 
-class BoardTurtle(Board):
+class BoardTurtle(object):
     def __init__(self, w, h, step = STEP_DISTANCE):
-        self.super = super(BoardTurtle, self)
-        self.super.__init__(w, h, w/2, -h/2)
-        
+        self.board = Board(w, h)
+        self.xoffset = w/2
+        self.yoffset = -h/2
         if step < 1:
             print("Error: Step Value less than 1")
-            self.super.close()
+            self.board.close()
             exit(1)
         
         self.step = step
 
         self.screen = turtle.Screen()
-        self.screen.setup(self.width(), self.height(), 0, 0)
+        self.screen.setup(self.board.width(), self.board.height(), 0, 0)
         self.t = turtle.Turtle()
         self.t.speed(-1)
         self.t.penup()
@@ -30,7 +30,7 @@ class BoardTurtle(Board):
         self.screen.onkey(self.move_right, "Right")
         self.screen.onkey(self.clearBoard, "c")
         self.screen.onkey(self.close, "z")
-        self.screen.onkey(self.send, "s")
+        self.screen.onkey(self.board.send, "s")
         self.screen.listen()
     
     def up_down_pen(self):
@@ -39,18 +39,18 @@ class BoardTurtle(Board):
             self.t.penup()
         else:
             print("Pen Down")
-            self.super.addTrace()
+            self.board.addTrace()
             self.t.pendown()
     
     def clearBoard(self):
         self.t.clear()
         self.t.penup()
-        self.super.clearBoard()
+        self.board.clearBoard()
 
     def move(self):
         if self.t.isdown():
             x,y = self.t.pos()
-            self.super.addPoint(x, y)
+            self.board.addPoint(x + self.xoffset, y + self.yoffset)
         self.t.forward(STEP_DISTANCE)
 
     def move_up(self):
@@ -70,7 +70,7 @@ class BoardTurtle(Board):
         self.move()
 
     def close(self):
-        self.super.close()
+        self.board.close()
         turtle.bye()
     
     def main(self):

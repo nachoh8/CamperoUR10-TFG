@@ -10,30 +10,29 @@ K_ESC = 27 # escape
 K_CLEAR = 99 # c
 K_SEND = 115 # s
 
-class BoardCV(Board):
+class BoardCV(object):
     def __init__(self, w, h):
-        self.super = super(BoardCV, self)
-        self.super.__init__(w, h)
+        self.board = Board(w, h)
 
         self.drawing = False # true if mouse is pressed
         self.pt1_x , self.pt1_y = None , None
         
-        self.screen = np.zeros((self.height(), self.width(), 3), np.uint8)
+        self.screen = np.zeros((self.board.height(), self.board.width(), 3), np.uint8)
 
         cv2.namedWindow(WINDOW_NAME)
         self.clearBoard()
         cv2.setMouseCallback(WINDOW_NAME, self.line_drawing)
 
     def clearBoard(self):
-        self.screen = np.zeros((self.height(), self.width(), 3), np.uint8)
-        self.super.clearBoard()
+        self.screen = np.zeros((self.board.height(), self.board.width(), 3), np.uint8)
+        self.board.clearBoard()
 
     # mouse callback function
     def line_drawing(self, event, x, y, flags, param):
 
         if event == cv2.EVENT_LBUTTONDOWN:
             self.drawing = True
-            self.super.addTrace()
+            self.board.addTrace()
             self.addPoint(x,y)
 
         elif event == cv2.EVENT_MOUSEMOVE:
@@ -47,14 +46,14 @@ class BoardCV(Board):
     
     def addPoint(self, x, y):
         self.pt1_x, self.pt1_y = x, y
-        self.super.addPoint(x, y)
+        self.board.addPoint(x, y)
     
     def close(self):
         cv2.destroyAllWindows()
-        self.super.close()
+        self.board.close()
 
     def main(self):
-        while not self.node.isClosed():
+        while self.board.isOkROS():
             cv2.imshow(WINDOW_NAME, self.screen)
 
             key = cv2.waitKey(1)
@@ -63,7 +62,7 @@ class BoardCV(Board):
             elif key == K_CLEAR:
                 self.clearBoard()
             elif key == K_SEND:
-                self.send()        
+                self.board.send()        
             
 if __name__ == '__main__':
     args = getBoardArgs()

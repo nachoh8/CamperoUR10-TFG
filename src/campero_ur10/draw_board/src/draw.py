@@ -1,11 +1,9 @@
 from campero_ur10_msgs.msg import ImgPoint, ImgTrace, ImageDraw
 
-class MyImageDraw:
-    def __init__(self, w, h, xoffset, yoffset):
+class Draw:
+    def __init__(self, w, h):
         self.W = w
         self.H = h
-        self.xoffset = xoffset
-        self.yoffset = yoffset
         self.traces = []
 
     def okey(self):
@@ -18,8 +16,8 @@ class MyImageDraw:
         self.traces.insert(len(self.traces), [])
 
     def addPoint(self, x, y):
-        xx = abs(x + self.xoffset)
-        yy = abs(y + self.yoffset)
+        xx = abs(x)
+        yy = abs(y)
         pts = self.traces[len(self.traces) - 1]
         pts.insert(len(pts), (xx,yy))
 
