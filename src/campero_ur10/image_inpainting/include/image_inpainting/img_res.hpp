@@ -13,13 +13,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d.hpp>
 
-//#include <pcl_ros/point_cloud.h>
-//#include <pcl/surface/concave_hull.h>
-//#include <pcl_ros/surface/convex_hull.h> 
-//#include <pcl/pcl_base.h>
-//#include <pcl/point_types.h>
-//#include <pcl/surface/concave_hull.h>
-
 #include <campero_ur10_msgs/ArucoMarker.h>
 #include <campero_ur10_msgs/ArucoMarkerArray.h>
 #include <campero_ur10_msgs/ArucoMarkersImg.h>

@@ -36,8 +36,6 @@
 #include <campero_ur10_msgs/ImgTrace.h>
 #include <campero_ur10_msgs/ImageDraw.h>
 
-#define TEST 0
-
 static const std::string NODE_NAME = "image_inpainting";
 static const std::string TOPIC_NAME_IMG_DRAW = "image_points";
 
@@ -56,7 +54,6 @@ private:
 
     std::string camera_frame , cam_ref_frame, robot_frame;
 	
-    
     /// aruco markers and image
     ros::Subscriber markers_img_sub;
 
@@ -69,9 +66,6 @@ private:
 
     /// Image Procesing
     std::shared_ptr<ImgProcessParams> img_params = std::make_shared<ImgProcessParams>();
-    #if TEST
-    image_transport::Subscriber image_test_sub;
-    #endif
 
     /// Result
     ros::Publisher img_pts_pub;
@@ -96,9 +90,6 @@ private:
         nh.param<int>("/" + NODE_NAME + "/dilate_size", img_params->dilate_size, 3);
         nh.param<bool>("/" + NODE_NAME + "/apply_smooth_path", img_params->apply_smooth_path, true);
         nh.param<int>("/" + NODE_NAME + "/smooth_path_kernel", img_params->smooth_path_kernel, 11);
-
-        nh.param<int>("/" + NODE_NAME + "/canny_th1", img_params->canny_threshold1, 100);
-        nh.param<int>("/" + NODE_NAME + "/canny_th2", img_params->canny_threshold2, 300);
     }
     
 public:
@@ -106,10 +97,6 @@ public:
         markers_img_sub = nh.subscribe("/aruco_detector/markers_img", 1, &ImageInpainting::markers_img_callback, this);
         cam_info_sub = nh.subscribe("/camera/color/camera_info", 1, &ImageInpainting::cam_info_callback, this);
         process_cmd_sub = nh.subscribe("/" + NODE_NAME + "/cmd", 1, &ImageInpainting::process_cmd_callback, this);
-        
-        #if TEST
-        image_test_sub = it.subscribe("/camera/color/image_rect_color", 1, &ImageInpainting::image_callback, this);
-        #endif
 
         image_debug_pub = it.advertise("/" + NODE_NAME + "/image_debug", 1);
         image_res_pub = it.advertise("/" + NODE_NAME + "/image_res", 1);
@@ -217,6 +204,10 @@ public:
 
         if (!cam_info_received) {
             ROS_WARN("Camera info not received");
+            return;
+        }
+        
+        if (msg.markers.markers.size() != 4) {
             return;
         }
         
@@ -358,235 +349,6 @@ public:
         
     }
 
-    #if TEST
-    void image_callback(const sensor_msgs::ImageConstPtr& msg) {
-        if (!cam_info_received) {
-            ROS_WARN("Camera info not received");
-            return;
-        }
-
-        cv_bridge::CvImagePtr cv_ptr;
-        try {
-            cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::RGB8);
-            cv::Mat img = cv_ptr->image.clone(); // image with markers
-
-            cv::Mat res;
-            if (img_params->contour_method == 0) {
-                    proc_img_v1(img, res);
-            } else if (img_params->contour_method == 1) {
-                    proc_img_v2(img, res);
-            }
-            if (image_debug_pub.getNumSubscribers() > 0) {
-                cv_bridge::CvImage out_msg;
-                out_msg.encoding = sensor_msgs::image_encodings::BGR8;
-                out_msg.image = res;
-                image_debug_pub.publish(out_msg.toImageMsg());
-            }
-        }
-        catch (cv_bridge::Exception& e) {
-            ROS_ERROR("cv_bridge exception: %s", e.what());
-            return;
-        }
-    }
-
-    void fill_mats(const int numImg, std::vector<cv::Vec3b>& colors, std::vector<cv::Mat>& imgs,
-                    const cv::Size& size, const int imgType) {
-        // Fill objects
-        for(int i = 0; i < numImg; i++ )
-        {
-            int b = cv::theRNG().uniform(0, 255);
-            int g = cv::theRNG().uniform(0, 255);
-            int r = cv::theRNG().uniform(0, 255);
-            colors.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
-
-            imgs.push_back(cv::Mat::zeros(size, imgType));
-        }
-    }
-    
-    void find_contours(const std::vector<cv::Mat> objetosImagen, cv::Mat& res) {
-        for (int i = 0; i < objetosImagen.size(); i++) {
-            std::vector< std::vector<cv::Point> > contours_local;
-            cv::findContours( objetosImagen[i], contours_local, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE );
-
-            if (contours_local.size() == 0) {
-                continue;
-            }
-
-            double maxLen = -1;
-            int indiceMax = -1;
-            for( size_t i = 0; i < contours_local.size(); i++ )
-            {
-                double len = cv::arcLength( contours_local[i], true );
-
-                if (len > maxLen) {
-                    maxLen = len;
-                    indiceMax = i;
-                }
-            }
-
-            if (indiceMax >= 0 && maxLen > img_params->min_contour_size) {
-                cv::drawContours( res, contours_local, indiceMax, cv::Scalar(0,0,255), 1 );
-            }
-        }
-        
-    }
-
-    void proc_img_v1(const cv::Mat& src, cv::Mat& res) {
-        // 1.To gray scale
-        cv::Mat gray;
-        if (img_params->apply_sharp) { // sharped image
-            cv::Mat kernel = (cv::Mat_<float>(3,3) <<
-                    1,  1, 1,
-                    1, -8, 1,
-                    1,  1, 1); // an approximation of second derivative, a quite strong kernel
-
-            cv::Mat imgLaplacian;
-            cv::filter2D(src, imgLaplacian, CV_32F, kernel);
-            
-            cv::Mat sharp;
-            src.convertTo(sharp, CV_32F);
-            cv::Mat imgResult = sharp - imgLaplacian;
-            
-            // convert back to 8bits gray scale
-            imgResult.convertTo(imgResult, CV_8UC3);
-
-            cv::cvtColor(imgResult, gray, cv::COLOR_BGR2GRAY);
-        } else {
-            cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
-        }
-        
-        // 2.Binarizar
-        cv::Mat img_otsu;
-        cv::threshold(gray, img_otsu, img_params->binary_thresh, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
-        
-        // 3.Delete Markers
-        //delete_markers(img_otsu);
-        
-        // 4.Calculo componentes conexas
-        cv::Mat objetos;
-        int nLabels = cv::connectedComponents(img_otsu, objetos, img_params->conectivity_way, CV_32S);
-
-        // 5.Fill objects
-        std::vector<cv::Vec3b> colorTab;
-        std::vector<cv::Mat> objetosImagen;
-        fill_mats(nLabels, colorTab, objetosImagen, src.size(), CV_8UC1);
-        
-        // 6.Extraer los diferentes objetos y asignarlos a su imagen correspondiente
-        for(int r = 0; r < objetos.rows; r++) {
-            for(int c = 0; c < objetos.cols; c++) {
-                int label = objetos.at<int>(r, c);
-                if (label != 0) {
-                    unsigned char& v = objetosImagen[label-1].at<unsigned char>(r, c);
-                    v = 255;
-                }
-            }
-        }
-        
-        // 7.Encontrar contornos
-        res = src.clone();
-        find_contours(objetosImagen, res);
-    }
-
-    void proc_img_v2(const cv::Mat& src, cv::Mat& res) {
-        // 1.Binarizar
-        cv::Mat gray;
-        cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
-
-        cv::Mat thresh;
-        cv::threshold(gray, thresh, img_params->binary_thresh, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
-        
-        // 2.Delete Markers
-        //delete_markers(thresh);
-
-        // 3.Improve Contours
-        cv::Mat kernel = (cv::Mat_<int>(3,3) <<
-                    1,  1, 1,
-                    1, 1, 1,
-                    1,  1, 1); // an approximation of second derivative, a quite strong kernel
-
-        cv::Mat opening;
-        cv::morphologyEx(thresh, opening, cv::MORPH_OPEN, kernel, cv::Point(-1,-1), 9);
-		//show_img(opening, "opening");
-        
-        const int dilate_type = img_params->getDilateType();
-        cv::Mat sure_bg;
-        if (dilate_type != -1) {
-            cv::Mat element = cv::getStructuringElement( dilate_type,
-                       cv::Size( 2 * img_params->dilate_size + 1, 2 * img_params->dilate_size + 1 ),
-                       cv::Point( img_params->dilate_size, img_params->dilate_size ) );
-            cv::dilate(opening, sure_bg, element );
-        } else {
-            cv::dilate(opening, sure_bg, kernel, cv::Point(-1,-1), 3);
-        }
-        //show_img(sure_bg);
-        const int erode_type = img_params->getErodeType();
-        if (erode_type != -1) {
-            cv::Mat element = cv::getStructuringElement( erode_type,
-                       cv::Size( 2 * img_params->erode_type + 1, 2 * img_params->erode_type + 1 ),
-                       cv::Point( img_params->erode_type, img_params->erode_type ) );
-            cv::erode(sure_bg, sure_bg, element );
-        }
-        //show_img(sure_bg);
-        //show_img(sure_bg, "sure_bg_1");
-        
-        // Finding sure foreground area
-        cv::Mat dist_transform;
-        cv::distanceTransform(opening, dist_transform, cv::DIST_L2, 5);
-        cv::Mat sure_fg;
-        
-        double min, max;
-        cv::minMaxLoc(dist_transform, &min, &max);
-        cv::threshold(dist_transform, sure_fg, 0.7*max, 255, 0);
-        //show_img(sure_fg, "sure_fg_1");
-        
-        // Finding unknown region
-        sure_fg.convertTo(sure_fg, CV_8UC3);
-        cv::Mat unknown;
-        cv::subtract(sure_bg, sure_fg, unknown);
-		//show_img(sure_fg, "sure_fg_2");
-        
-        // 4.Marker labelling
-        cv::Mat objects;
-        int nLabels = cv::connectedComponents(sure_fg, objects, img_params->conectivity_way, CV_32S);
-
-        // Add one to all labels so that sure background is not 0, but 1
-        objects = objects+1;
-        
-        // 5.Now, mark the region of unknown with zero
-        for(int r = 0; r < objects.rows; r++) {
-            for(int c = 0; c < objects.cols; c++) {
-                unsigned char v = unknown.at<unsigned char>(r, c);
-                if (v == 255) {
-                    int &pixel = objects.at<int>(r, c);
-                    pixel = 0;
-                }
-            }
-        }
-
-        // 6.Watershed
-        cv::watershed(src, objects);
-        
-        // 7.Fill objects
-        std::vector<cv::Vec3b> colorTab;
-        std::vector<cv::Mat> objetosImagen;
-        fill_mats(nLabels, colorTab, objetosImagen, src.size(), CV_8UC1);
-
-        // 8.Extraer los diferentes objetos y asignarlos a su imagen correspondiente
-        for(int r = 0; r < objects.rows; r++) {
-            for(int c = 0; c < objects.cols; c++) {
-                int idx = objects.at<int>(r, c) - 1;
-                if (idx > 0 && idx < nLabels) {
-                    unsigned char& v = objetosImagen[idx - 1].at<unsigned char>(r, c);
-                    v = 255;
-                }
-            }
-        }
-		
-        // 9.Find contours on image objets
-        res = src.clone();
-        find_contours(objetosImagen, res);
-    }
-    #endif
 };
 
 int main(int argc, char** argv)

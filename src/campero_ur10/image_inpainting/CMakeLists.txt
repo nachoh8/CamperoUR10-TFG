@@ -24,18 +24,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
-  pcl_conversions
-  pcl_ros
 )
 
 find_package(OpenCV REQUIRED)
-find_package(PCL REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -47,8 +41,6 @@ catkin_package(
                   sensor_msgs
                   std_msgs
                   tf
-                  pcl_conversions
-                  pcl_ros
     DEPENDS
                   EIGEN3
 #  DEPENDS system_lib
@@ -56,18 +48,9 @@ catkin_package(
 
 include_directories(SYSTEM include ${Boost_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
-add_definitions(${PCL_DEFINITIONS})
-
 add_executable(image_inpainting src/image_inpainting.cpp)
 add_dependencies(image_inpainting campero_ur10_msgs_generate_messages_cpp)
-target_link_libraries(image_inpainting ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES}) # ${PCL_LIBRARIES}
+target_link_libraries(image_inpainting ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-# add_executable(test_edges src/test_edges.cpp)
-# add_dependencies(test_edges campero_ur10_msgs_generate_messages_cpp)
-# target_link_libraries(test_edges ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-
-add_executable(test_pcl src/test_pcl.cpp)
-target_link_libraries(test_pcl ${PCL_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-
-install(TARGETS image_inpainting test_pcl DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(TARGETS image_inpainting DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
