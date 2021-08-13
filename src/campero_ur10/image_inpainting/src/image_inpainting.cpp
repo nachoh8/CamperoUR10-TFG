@@ -75,19 +75,24 @@ private:
 
     void load_img_params() {
         nh.param<int>("/" + NODE_NAME + "/max_dist_error", img_params->max_dist_error, DEAULT_MAX_DIST_ERROR);
+        
         nh.param<int>("/" + NODE_NAME + "/contour_method", img_params->contour_method, 0);
-        nh.param<int>("/" + NODE_NAME + "/min_contour_size", img_params->min_contour_size, 30);
-        nh.param<bool>("/" + NODE_NAME + "/apply_concaveman", img_params->apply_concaveman, true);
-        nh.param<double>("/" + NODE_NAME + "/concaveman_alpha", img_params->concaveman_alpha, 1.0);
-        nh.param<bool>("/" + NODE_NAME + "/apply_sharp", img_params->apply_sharp, false);
-        nh.param<int>("/" + NODE_NAME + "/binary_thresh", img_params->binary_thresh, 0);
         nh.param<int>("/" + NODE_NAME + "/conectivity_way", img_params->conectivity_way, 8);
-        nh.param<int>("/" + NODE_NAME + "/number_iterations", img_params->number_iterations, 9);
         nh.param<int>("/" + NODE_NAME + "/blur_ksize", img_params->blur_ksize, 3);
+        
+        nh.param<bool>("/" + NODE_NAME + "/apply_sharp", img_params->apply_sharp, false);
+
+        nh.param<int>("/" + NODE_NAME + "/number_iterations", img_params->number_iterations, 9);
         nh.param<int>("/" + NODE_NAME + "/erode_type", img_params->erode_type, 0);
         nh.param<int>("/" + NODE_NAME + "/erode_size", img_params->erode_size, 3);
         nh.param<int>("/" + NODE_NAME + "/dilate_type", img_params->dilate_type, 0);
         nh.param<int>("/" + NODE_NAME + "/dilate_size", img_params->dilate_size, 3);
+
+        nh.param<int>("/" + NODE_NAME + "/min_contour_size", img_params->min_contour_size, 30);
+
+        nh.param<bool>("/" + NODE_NAME + "/apply_concaveman", img_params->apply_concaveman, true);
+        nh.param<double>("/" + NODE_NAME + "/concaveman_alpha", img_params->concaveman_alpha, 1.0);
+
         nh.param<bool>("/" + NODE_NAME + "/apply_smooth_path", img_params->apply_smooth_path, true);
         nh.param<int>("/" + NODE_NAME + "/smooth_path_kernel", img_params->smooth_path_kernel, 11);
     }
@@ -215,6 +220,30 @@ public:
         try {
             cv_ptr = cv_bridge::toCvCopy(msg.img, sensor_msgs::image_encodings::BGR8);
             
+            /*cv::Mat img = cv_ptr->image;
+            std::vector<campero_ur10_msgs::ArucoMarker> markers = msg.markers.markers;
+            std::vector<cv::Vec3b> colors;
+            colors.push_back(cv::Vec3b(255, 0, 0));
+            colors.push_back(cv::Vec3b(0, 255, 0));
+            colors.push_back(cv::Vec3b(0, 0, 255));
+            colors.push_back(cv::Vec3b(255, 0, 255));
+            for (int i = 0; i < markers.size(); i++) {
+                cv::Point2f center(0,0);
+                for (int j = 0; j < markers[i].img_points.size(); j++) {
+                    cv::Point p = cv::Point(markers[i].img_points[j].x, markers[i].img_points[j].y);
+                    cv::circle(img, p, 3, colors[i], -1);
+                    center.x += p.x;
+                    center.y += p.y;
+                }
+                center.x /= float(markers[i].img_points.size());
+                center.y /= float(markers[i].img_points.size());
+                cv::drawMarker(img, center, colors[i]);
+            }
+            cv_bridge::CvImage out_msg;
+            out_msg.encoding = sensor_msgs::image_encodings::BGR8;
+            out_msg.image = img;
+            image_res_pub.publish(out_msg.toImageMsg());
+            return;*/
             ImageRes* img_p = new ImageRes(cv_ptr->image, msg.markers.markers, img_params);
             
             //cv::Mat _rvec, _tvec;
@@ -230,7 +259,16 @@ public:
             //tvec = _tvec;
 
             if (best_img != nullptr && img_p->getError() > best_img->getError()) return;
+            
+            img_p->find_pts();
 
+            if (img_p->numberCountours() == 0) {
+                delete img_p;
+                return;
+            }
+            
+            best_img.reset(img_p);
+            
             // Optical cam to cam ref
             tf::StampedTransform Cam_optToCam_ref;
             Cam_optToCam_ref.setIdentity();
@@ -253,16 +291,7 @@ public:
                                       * static_cast<tf::Transform>(Cam_refToRobot_ref) 
                                       * static_cast<tf::Transform>(rightToLeft);
             
-            img_p->setTransform(transform_base);
-            img_p->find_pts();
-
-            if (img_p->numberCountours() == 0) {
-                delete img_p;
-                return;
-            }
-
-            best_img.reset(img_p);
-            
+            best_img->setTransform(transform_base);
             best_img->img2World();
 
             ROS_INFO("--New best image--");

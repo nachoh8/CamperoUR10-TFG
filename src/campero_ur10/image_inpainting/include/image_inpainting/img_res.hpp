@@ -54,7 +54,6 @@ private:
 
     // plano formado por las marcas aruco
     double z_markers_const; // distancia de la camara al plano, la camara es perpendicular al plano
-    cv::Point3f normal_plane, plane_o; // normal y punto origen del plano
     
     /// Internal fucntions
 
@@ -131,25 +130,8 @@ private:
 
         for (int i = 0; i < len; i++) {
             cv::Point3f p = pose2Pt3f(markers[i].pose);
-            // std::cout << i << " -> " << p << std::endl;
             marker_pose_pts.push_back(p);
         }
-        
-        // Plane parameters
-        plane_o = marker_pose_pts[TOP_LEFT_IDX];
-        cv::Point3f u = marker_pose_pts[TOP_RIGHT_IDX] - plane_o;
-        cv::Point3f v = marker_pose_pts[BOTTOM_LEFT_IDX] - plane_o;
-        
-        normal_plane = u.cross(v);
-        VectorEigen n;
-        n << normal_plane.x, normal_plane.y, normal_plane.z;
-        n.normalize();
-        normal_plane = cv::Point3f(n(0), n(1), n(2));
-        
-
-        /*std::cout << "Calc Matrix" << std::endl;
-        std::cout << u << "x" << v << " = " << normal_plane << std::endl;
-        std::cout << plane_o << std::endl;*/
     }
 
     void filterRectPoints(std::vector<cv::Point2f>& pts, std::vector<cv::Point2f>& res) {
@@ -178,17 +160,12 @@ private:
     void correctImage() {
         
         // Cast to cv::Point/2f type
-        //std::vector< std::vector<cv::Point> > pts(markers.size());
         std::vector<cv::Point2f> pts_f;
         for (int i = 0; i < markers.size(); i++) {
             for (int j = 0; j < markers[i].img_points.size(); j++) {
-                //pts[i].push_back(cv::Point(markers[i].img_points[j].x, markers[i].img_points[j].y));
                 pts_f.push_back(cv::Point2f(markers[i].img_points[j].x, markers[i].img_points[j].y));
             }
         }
-        
-        // Delete Markers
-        // cv::drawContours(image, pts, -1, cv::Scalar(255,255,255), -1);
 
         // Get Corner Source points
         std::vector<cv::Point2f> src_pts;
@@ -300,24 +277,7 @@ private:
                 cv::Mat pt_m (cv::Size(3,1), CV_64F);
                 pt_m = leftSideMat * uvPt - rightSideMat;
                 cv::Point3f pt_w(pt_m.at<double>(0), pt_m.at<double>(1), pt_m.at<double>(2));
-                /*if (j < 10) {
-					std::cout << j << std::endl;
-					std::cout << "pt: " << pt << std::endl;
-					std::cout << "uvPt: " << uvPt << std::endl;
-					double rX = leftSideMat.at<double>(0,0) * uvPt.at<double>(0) + leftSideMat.at<double>(0,1) * uvPt.at<double>(1) + leftSideMat.at<double>(0,2) * uvPt.at<double>(2);
-					double rY = leftSideMat.at<double>(1,0) * uvPt.at<double>(0) + leftSideMat.at<double>(1,1) * uvPt.at<double>(1) + leftSideMat.at<double>(1,2) * uvPt.at<double>(2);
-					double rZ = leftSideMat.at<double>(2,0) * uvPt.at<double>(0) + leftSideMat.at<double>(2,1) * uvPt.at<double>(1) + leftSideMat.at<double>(2,2) * uvPt.at<double>(2);
-					
-					rX = rX - rightSideMat.at<double>(0);
-					rY = rY - rightSideMat.at<double>(1);
-					rZ = rZ - rightSideMat.at<double>(2);
-					
-					std::cout << "Rx: " << rX << " Ry: " << rY << " Rz: " << rZ << std::endl;
-					
-					//std::cout << leftSideMat.at<double>(1,1) << "x" << uvPt.at<double>(1) << " = " << leftSideMat.at<double>(1,1) * uvPt.at<double>(1) <<std::endl;
-					std::cout << "pt_m: " << pt_m << std::endl;
-					std::cout << "pt_w: " << pt_w << std::endl;
-				}*/
+                
                 res[i].push_back(pt_w);
             }
         }
@@ -427,7 +387,7 @@ public:
         
         for (int i = 0; i < pts_cam.size(); i++) {
 			campero_ur10_msgs::ImgTrace trace;
-			int j = 0;
+			//int j = 0;
 			for (auto &pt : pts_cam[i]) {
 				p.position.x = pt.x;
 				p.position.y = pt.y;
@@ -452,7 +412,7 @@ public:
 				pt_msg.y = pose.position.y;
 				pt_msg.z = pose.position.z;
 				trace.points.push_back(pt_msg);
-				j++;
+				//j++;
 			}
 
 			img_res_msg.traces.push_back(trace);
@@ -501,6 +461,21 @@ public:
         }
     }
     
+    void print_pts_to_plot(std::vector<cv::Point> pts, const int W, const int H) {
+        std::cout << "W: " << W << " H: " << H << std::endl;
+        std::string xStr = "x = [";
+        std::string yStr = "y = [";
+        for (int i = 0; i < pts.size(); i++) {
+            xStr += std::to_string(pts[i].x) + " ";
+            yStr += std::to_string(pts[i].y) + " ";
+        }
+        xStr += "]";
+        yStr += "]";
+        
+        std::cout << xStr << std::endl;
+        std::cout << yStr << std::endl;
+    }
+
     void find_contours(const std::vector<cv::Mat> objetosImagen) {
         // Find contours on image objets
         for (int i = 0; i < objetosImagen.size(); i++) {
@@ -532,12 +507,15 @@ public:
                     
                     std::vector<cv::Point> shape;
                     cv::Mat aux = concave2cv(concave, img_correct.cols, img_correct.rows, shape);
-                    
+                    //show_img(aux, "concaveman", false);
+                    //show_img_from_vec(contours_local[indiceMax], img_correct.size(), "max");
                     contours.push_back(shape);
                     total_pts += shape.size();
+                    //print_pts_to_plot(shape, img_correct.cols, img_correct.rows);
                 } else {
                     contours.push_back(contours_local[indiceMax]);
                     total_pts += contours_local[indiceMax].size();
+                    //print_pts_to_plot(contours_local[indiceMax], img_correct.cols, img_correct.rows);
                 }
             }
         }
@@ -545,6 +523,7 @@ public:
 
     void fill_images_show() {
         img_debug_show = img_correct.clone();
+        //img_debug_show = cv::Scalar(0,0,0);
         img_original_show = img_original.clone();
         
         for (int i = 0; i < contours.size(); i++) {
@@ -563,6 +542,7 @@ public:
     
     void fill_images_showD() {
         img_debug_show = img_correct.clone();
+        //img_debug_show = cv::Scalar(0,0,0);
         img_original_show = img_original.clone();
         
         for (int i = 0; i < contoursD.size(); i++) {
@@ -574,7 +554,7 @@ public:
                 cv::circle(img_debug_show, contoursD[i][j], 0, c, -1);
 				
                 cv::Point2d p = H_to_Orig(contoursD[i][j]);
-                if (j < 10) std::cout << "Pt img: " << p.x << " " << p.y << std::endl;
+                //if (j < 10) std::cout << "Pt img: " << p.x << " " << p.y << std::endl;
 
                 cv::circle(img_original_show, p, 0, c, -1);
             }
@@ -583,7 +563,7 @@ public:
         /*cv::imshow("debug", img_debug_show);
 		cv::imshow("original", img_original_show);
 		cv::waitKey(0);*/
-		cv::destroyAllWindows();
+		//cv::destroyAllWindows();
     }
     
     /// Img Processing Methods
@@ -597,11 +577,11 @@ public:
                 proc_watershed();
                 break;
             default:
-                proc_basic();
+                proc_simple();
         }
     }
 
-    void proc_basic() {
+    void proc_simple() {
         // 1.To gray scale
         cv::Mat gray;
         if (img_params->apply_sharp) { // sharped image
@@ -630,7 +610,7 @@ public:
 
         // 2.Binarizar
         cv::Mat img_otsu;
-        cv::threshold(gray, img_otsu, img_params->binary_thresh, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
+        cv::threshold(gray, img_otsu, 0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
         
         // 3.Delete Markers
         delete_markers(img_otsu);
@@ -672,7 +652,7 @@ public:
         }
 
         cv::Mat thresh;
-        cv::threshold(gray, thresh, img_params->binary_thresh, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
+        cv::threshold(gray, thresh, 0, 255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
         
         // 2.Delete Markers
         delete_markers(thresh);
@@ -705,8 +685,8 @@ public:
         const int erode_type = img_params->getErodeType();
         if (erode_type != -1) {
             cv::Mat element = cv::getStructuringElement( erode_type,
-                       cv::Size( 2 * img_params->erode_type + 1, 2 * img_params->erode_type + 1 ),
-                       cv::Point( img_params->erode_type, img_params->erode_type ) );
+                       cv::Size( 2 * img_params->erode_size + 1, 2 * img_params->erode_size + 1 ),
+                       cv::Point( img_params->erode_size, img_params->erode_size ) );
             cv::erode(sure_bg, sure_bg, element );
         }
         cv::cvtColor(sure_bg, img_debug_show, cv::COLOR_GRAY2RGB);
@@ -814,7 +794,7 @@ public:
 		const int scale = img_params->smooth_path_kernel;
 		//std::cout << "len x: " << n << " len y: " << yy.size() << std::endl;
 
-		// 1.gaussian kernel
+		/// 1. Gaussian Kernel
 		cv::Mat gaussianKernel = cv::getGaussianKernel(scale, double(scale)/sqrt(2.0*M_PI), CV_64F);
 		cv::mulTransposed(gaussianKernel,gaussianKernel,false);
 		//std::cout << "gaussianKernel: " << gaussianKernel << std::endl;
@@ -830,7 +810,7 @@ public:
 		}
 		//std::cout << "weight: " << weight << std::endl;
 
-		// 2.convolution
+		/// 2. Convolution
 
 		std::vector<double> _xExt(xx);
 		_xExt.insert(_xExt.end(), xx.begin(), xx.end()); 
@@ -856,10 +836,7 @@ public:
 		yExtFilt = yExtFilt * weight;
 		//std::cout << "Mat_yExtFilt: " << yExtFilt.rows << " " << yExtFilt.cols << " | type: " << yExtFilt.type() << std::endl;
 
-		//xExt.release();
-		//yExt.release();
-
-		// 3.obtein values in the middle
+		/// 3. Get Middle Values
 
 		cv::Mat xFilt = xExtFilt(cv::Range::all(), cv::Range(n, 2*n));
 		cv::Mat yFilt = yExtFilt(cv::Range::all(), cv::Range(n, 2*n));
@@ -867,18 +844,8 @@ public:
 		//std::cout << "Mat_xFilt: " << xFilt.rows << " " << xFilt.cols << " | type: " << xFilt.type() << std::endl;
 		//std::cout << "Mat_yFilt: " << yFilt.rows << " " << yFilt.cols << " | type: " << yFilt.type() << std::endl;
 
-		// 4.rescale
-
-		/*double min, maxY_Filt;
-		cv::minMaxLoc(yFilt, &min, &maxY_Filt);
-		double maxY = yy[0];
-		for (int i = 1; i < n; i++) {
-			if (yy[i] > maxY) {
-				maxY = yy[i];
-			}
-		}
-		double factor = std::abs(maxY) / std::abs(maxY_Filt) + 0.000001;
-		std::cout << "maxY: " << maxY << " maxY_Filt: " << maxY_Filt << std::endl;*/
+		/// 4. Rescale to original size
+		//std::cout << "maxY: " << maxY << " maxY_Filt: " << maxY_Filt << std::endl;
 		double min, maxX_Filt;
 		cv::minMaxLoc(xFilt, &min, &maxX_Filt);
 		double maxX = xx[0];
@@ -888,14 +855,15 @@ public:
 			}
 		}
 		double factor = std::abs(maxX) / std::abs(maxX_Filt) + 0.000001;
-		std::cout << "maxX: " << maxX << " maxY_Filt: " << maxX_Filt << std::endl;
-		std::cout << "Factor: " << factor << std::endl;
+		//std::cout << "maxX: " << maxX << " maxX_Filt: " << maxX_Filt << std::endl;
+		//std::cout << "Factor: " << factor << std::endl;
 		xFilt = xFilt * factor;
 		yFilt = yFilt * factor;
 
 		//std::cout << "Mat_xFilt: " << xFilt.rows << " " << xFilt.cols << " | type: " << xFilt.type() << std::endl;
 		//std::cout << "Mat_yFilt: " << yFilt.rows << " " << yFilt.cols << " | type: " << yFilt.type() << std::endl;
 
+        /// 5. Transform result to cv::Point2d
 		for (int i = 0; i < n; i++) {
 			double x = xFilt.at<double>(i);
 			double y = yFilt.at<double>(i);

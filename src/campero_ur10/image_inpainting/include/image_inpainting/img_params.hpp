@@ -49,7 +49,7 @@ class ImgProcessParams {
             case 1:
                 return "WATERSHED";
            default:
-                return "NOT_WATERSHED";
+                return "SIMPLE (NOT_WATERSHED)";
         }
     }
 
@@ -74,7 +74,6 @@ public:
     // common proc params:
     int contour_method; // 0-1
     int blur_ksize;
-    int binary_thresh; // 0-255
     int conectivity_way; // 4 or 8
     int min_contour_size;
 
@@ -97,7 +96,6 @@ public:
 			msg += "\tKernel size: " + std::to_string(smooth_path_kernel) + "\n";
 		}
         msg += "Min contour size: " + std::to_string(min_contour_size) + " px\n";
-        msg += "Binary Threshold: " + std::to_string(binary_thresh) + "\n";
         msg += "Conectivity way: " + std::to_string(conectivity_way) + "\n";
         msg += "Method WATERSHED params:\n";
         msg += "\tOpening operation num iterations: " + std::to_string(number_iterations) + "\n";

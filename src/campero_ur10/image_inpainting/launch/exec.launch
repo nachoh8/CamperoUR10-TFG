@@ -1,7 +1,7 @@
 <launch>
   <arg name="cam_frame" default="camera_color_optical_frame"/>
   <arg name="cam_ref_frame" default="campero_base_footprint"/>
-  <arg name="robot_frame" default="campero_base_footprint"/>
+  <arg name="robot_frame" default="base_link"/>
 
   <arg name="max_dist_error" default="7"/> <!-- distancia de error maximo en pixeles entre el punto real y el punto en la img-->
   <arg name="contour_method" default="0"/>
@@ -9,7 +9,6 @@
   <arg name="apply_concaveman" default="true"/>
   <arg name="concaveman_alpha" default="1.0"/>
   <arg name="apply_sharp" default="false"/>
-  <arg name="binary_thresh" default="0"/>
   <arg name="conectivity_way" default="8"/>
   <arg name="number_iterations" default="9"/>
   <arg name="apply_smooth_path" default="true"/>
@@ -34,7 +33,6 @@
       <param name="apply_concaveman"       value="$(arg apply_concaveman)"/>
       <param name="concaveman_alpha"       value="$(arg concaveman_alpha)"/>
       <param name="apply_sharp"       value="$(arg apply_sharp)"/>
-      <param name="binary_thresh"       value="$(arg binary_thresh)"/>
       <param name="conectivity_way"       value="$(arg conectivity_way)"/>
       <param name="number_iterations"       value="$(arg number_iterations)"/>
       <param name="apply_smooth_path"       value="$(arg apply_smooth_path)"/>
