@@ -1,11 +1,13 @@
 build/
 devel/
-.vscode/
 *.pyc
 src/fmauch_universal_robot/
 src/Universal_Robots_ROS_Driver/
 src/realsense/
-.vscode/
 test/aruco_detector_1.bag
 
 test/aruco_detector_2.bag
+
+test/rosbag_aruco_detector_1.bag
+
+test/rosbag_aruco_detector_2.bag
