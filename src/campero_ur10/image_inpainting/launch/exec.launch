@@ -1,7 +1,7 @@
 <launch>
   <arg name="cam_frame" default="camera_color_optical_frame"/>
   <arg name="cam_ref_frame" default="campero_base_footprint"/>
-  <arg name="robot_frame" default="base_link"/>
+  <arg name="robot_frame" default="campero_base_footprint"/>
 
   <arg name="max_dist_error" default="7"/> <!-- distancia de error maximo en pixeles entre el punto real y el punto en la img-->
   <arg name="contour_method" default="0"/>

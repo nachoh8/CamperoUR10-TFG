@@ -5,4 +5,7 @@ devel/
 src/fmauch_universal_robot/
 src/Universal_Robots_ROS_Driver/
 src/realsense/
-test/
+.vscode/
+test/aruco_detector_1.bag
+
+test/aruco_detector_2.bag
