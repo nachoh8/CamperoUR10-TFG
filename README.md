@@ -1,6 +1,7 @@
-# campero_ur10_ws
-Prácticas en el i3A y TFG:
-Uso del entorno ROS con la interfaz Rviz para el control del robot manipulador UR10, con el objetivo de que el robot pueda realizar gráficos en papel
+# Development of a practical demonstrator in ROS for the UR10 robot manipulator
+Internships and Bachelor thesis. Development of applications (painting and teleoperation) for the UR10 robot
+manipulator with ROS Kinetic, both in simulation and in real environment. In addition to the use of MoveIt, OpenCV and
+the Realsense D435 camera. [Documentation](https://deposita.unizar.es/record/63479). [Results](https://www.youtube.com/watch?v=zaabGxoTJe8).
 
 ## Requisitos
 - Ubuntu 16.04
